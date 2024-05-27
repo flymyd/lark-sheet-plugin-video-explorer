@@ -1,12 +1,29 @@
 <template>
   <el-config-provider :locale="appStore.locale">
     <div class="flex flex-col overflow-x-hidden">
-      <div class="flex flex-wrap items-center justify-end w-full pr-2 my-2">
+      <div class="flex flex-wrap items-center justify-between w-full pr-2 my-2">
+        <el-popover
+            placement="top-start"
+            :width="300"
+            trigger="hover"
+            :content="$t('hint.useHint')"
+        >
+          <template #reference>
+            <el-button class="m-2">
+              <el-icon class="mr-1"><QuestionFilled/></el-icon>
+              {{ $t('hint.help') }}
+            </el-button>
+          </template>
+        </el-popover>
         <el-dropdown @command="switchLang">
           <div class="flex flex-row items-center">
-            <svg preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24" width="1.2em" height="1.2em" data-v-12008bb2=""><path fill="currentColor" d="m18.5 10l4.4 11h-2.155l-1.201-3h-4.09l-1.199 3h-2.154L16.5 10h2zM10 2v2h6v2h-1.968a18.222 18.222 0 0 1-3.62 6.301a14.864 14.864 0 0 0 2.336 1.707l-.751 1.878A17.015 17.015 0 0 1 9 13.725a16.676 16.676 0 0 1-6.201 3.548l-.536-1.929a14.7 14.7 0 0 0 5.327-3.042A18.078 18.078 0 0 1 4.767 8h2.24A16.032 16.032 0 0 0 9 10.877a16.165 16.165 0 0 0 2.91-4.876L2 6V4h6V2h2zm7.5 10.885L16.253 16h2.492L17.5 12.885z"></path></svg>
+            <svg preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24" width="1.2em" height="1.2em"
+                 data-v-12008bb2="">
+              <path fill="currentColor"
+                    d="m18.5 10l4.4 11h-2.155l-1.201-3h-4.09l-1.199 3h-2.154L16.5 10h2zM10 2v2h6v2h-1.968a18.222 18.222 0 0 1-3.62 6.301a14.864 14.864 0 0 0 2.336 1.707l-.751 1.878A17.015 17.015 0 0 1 9 13.725a16.676 16.676 0 0 1-6.201 3.548l-.536-1.929a14.7 14.7 0 0 0 5.327-3.042A18.078 18.078 0 0 1 4.767 8h2.24A16.032 16.032 0 0 0 9 10.877a16.165 16.165 0 0 0 2.91-4.876L2 6V4h6V2h2zm7.5 10.885L16.253 16h2.492L17.5 12.885z"></path>
+            </svg>
             <el-icon class="el-icon--right">
-              <arrow-down />
+              <arrow-down/>
             </el-icon>
           </div>
           <template #dropdown>
@@ -39,9 +56,6 @@
           <span>{{ tableVal ? tableVal[item.id] : '-' }}</span>
         </div>
       </template>
-      <div class="flex flex-row items-center ml-2 mb-2">
-        <span>← {{ $t('hint.useHint') }}</span>
-      </div>
       <div style="width: 100%;" v-if="currentCellPicUrlList.length">
         <el-carousel height="70vh" :autoplay="false" v-loading.fullscreen.lock="isLoading" :loop="false"
                      ref="carousel"
@@ -61,8 +75,8 @@ import {computed, onMounted, onUnmounted, reactive, ref} from "vue";
 import {bitable, IAttachmentField, IGridView} from "@lark-base-open/js-sdk";
 import {ElConfigProvider} from 'element-plus';
 import {useAppStore} from './store/modules/app'
-import {ArrowDown} from '@element-plus/icons-vue'
-import { useTheme } from './hooks/useTheme';
+import {ArrowDown, QuestionFilled} from '@element-plus/icons-vue'
+import {useTheme} from './hooks/useTheme';
 
 const appStore = useAppStore()
 useTheme();
