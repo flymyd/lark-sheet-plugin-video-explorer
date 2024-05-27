@@ -5,7 +5,8 @@ import Components from 'unplugin-vue-components/vite'
 import {ElementPlusResolver} from 'unplugin-vue-components/resolvers'
 
 export default defineConfig({
-  base: '/lark-sheet-plugin-gallery-explorer/',
+  // base: '/lark-sheet-plugin-gallery-explorer/',
+  base: './',
   plugins: [
     vue(),
     AutoImport({
