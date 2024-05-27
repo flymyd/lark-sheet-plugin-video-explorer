@@ -1,7 +1,7 @@
 <template>
   <el-config-provider :locale="appStore.locale">
     <div class="flex flex-col overflow-x-hidden">
-      <div class="flex flex-wrap items-center justify-between w-full pr-2 my-2">
+      <div class="flex flex-wrap items-center justify-between w-full pr-2">
         <el-popover
             placement="top-start"
             :width="300"
