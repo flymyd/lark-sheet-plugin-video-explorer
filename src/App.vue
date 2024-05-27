@@ -1,45 +1,53 @@
 <template>
-  <div class="flex flex-col">
-    <div class="flex flex-row items-center ml-2 mb-2 pr-2">
-      <span>请选择待预览的图片列：</span>
-      <el-select v-model="currentFieldId" placeholder="请选择列" size="large" style="flex: 1;"
-                 @change="onFieldListChange">
-        <el-option v-for="item in attachmentFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
-      </el-select>
-    </div>
-    <div class="flex flex-row items-center ml-2 mb-2 pr-2">
-      <span>请选择待预览的内容列：</span>
-      <el-select v-model="previewTextFieldList" multiple placeholder="请选择列" style="flex: 1;"
-                 @change="onPreviewChange">
-        <el-option v-for="item in othersFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
-      </el-select>
-    </div>
-    <template v-if="previewTextFieldList.length">
-      <div class="flex flex-row ml-2 mb-2 pr-2" v-for="item in descriptions">
-        <span>{{ item.name ? item.name : '-' }}：</span>
-        <span>{{ tableVal ? tableVal[item.id] : '-' }}</span>
+  <el-config-provider :locale="appStore.locale">
+    <div class="flex flex-col overflow-x-hidden">
+      <el-button @click="switchLang(0)">ZH</el-button>
+      <el-button @click="switchLang(1)">EN</el-button>
+      <el-button @click="switchLang(2)">JP</el-button>
+      <div class="flex flex-col items-start ml-2 mb-2 pr-2">
+        <span class="my-2">{{ $t('hint.attachmentSelector') }}</span>
+        <el-select v-model="currentFieldId" size="large" style="flex: 1;"
+                   @change="onFieldListChange">
+          <el-option v-for="item in attachmentFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
+        </el-select>
       </div>
-    </template>
-    <div class="flex flex-row items-center ml-2 mb-2">
-      <span>← 先点击左侧的行预览，再点击一次本插件窗口后按键盘的方向键翻页</span>
+      <div class="flex flex-col items-start ml-2 mb-2 pr-2">
+        <span class="my-2">{{ $t('hint.textSelector') }}</span>
+        <el-select v-model="previewTextFieldList" multiple
+                   style="flex: 1;"
+                   @change="onPreviewChange">
+          <el-option v-for="item in othersFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
+        </el-select>
+      </div>
+      <template v-if="previewTextFieldList.length">
+        <div class="flex flex-row ml-2 mb-2 pr-2" v-for="item in descriptions">
+          <span>{{ item.name ? item.name : '-' }}：</span>
+          <span>{{ tableVal ? tableVal[item.id] : '-' }}</span>
+        </div>
+      </template>
+      <div class="flex flex-row items-center ml-2 mb-2">
+        <span>← {{ $t('hint.useHint') }}</span>
+      </div>
+      <div style="width: 100%;" v-if="currentCellPicUrlList.length">
+        <el-carousel height="70vh" :autoplay="false" v-loading.fullscreen.lock="isLoading" :loop="false"
+                     ref="carousel"
+                     @change="onCarouselChange"
+                     direction="vertical">
+          <el-carousel-item v-for="src in currentCellPicUrlList" :src="src">
+            <img :src="src" style="width: 100%;height: auto;"/>
+          </el-carousel-item>
+        </el-carousel>
+      </div>
+      <div v-else class="ml-2">{{ $t('hint.noPicture') }}</div>
     </div>
-    <div style="width: 100%;" v-if="currentCellPicUrlList.length">
-      <el-carousel height="70vh" :autoplay="false" v-loading.fullscreen.lock="isLoading" :loop="false"
-                   ref="carousel"
-                   @change="onCarouselChange"
-                   direction="vertical">
-        <el-carousel-item v-for="src in currentCellPicUrlList" :src="src">
-          <img :src="src" style="width: 100%;height: auto;"/>
-        </el-carousel-item>
-      </el-carousel>
-    </div>
-    <div v-else class="ml-2">暂无图片</div>
-  </div>
+  </el-config-provider>
 </template>
 <script setup lang="ts">
 import {computed, onMounted, onUnmounted, reactive, ref} from "vue";
 import {bitable, IAttachmentField, IGridView} from "@lark-base-open/js-sdk";
-
+import {ElConfigProvider} from 'element-plus';
+import {useAppStore} from './store/modules/app'
+const appStore = useAppStore()
 let onSelectionChangeHandler: any = null;
 const currentCellPicUrlList = ref<Array<any>>([])
 const tableFieldMetaList = ref<Array<any>>([])
@@ -168,6 +176,15 @@ onUnmounted(() => {
   }
   document.removeEventListener('keydown', handleKeyDown);
 })
+const switchLang = (type: number) => {
+  if (type === 0) {
+    appStore.changeLanguage('zh-cn')
+  } else if (type === 1) {
+    appStore.changeLanguage('en')
+  } else if (type === 2) {
+    appStore.changeLanguage('ja')
+  }
+}
 </script>
 <style scoped>
 :deep(.is-active) {
