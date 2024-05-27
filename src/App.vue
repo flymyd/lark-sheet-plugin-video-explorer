@@ -62,8 +62,10 @@ import {bitable, IAttachmentField, IGridView} from "@lark-base-open/js-sdk";
 import {ElConfigProvider} from 'element-plus';
 import {useAppStore} from './store/modules/app'
 import {ArrowDown} from '@element-plus/icons-vue'
+import { useTheme } from './hooks/useTheme';
 
 const appStore = useAppStore()
+useTheme();
 let onSelectionChangeHandler: any = null;
 const currentCellPicUrlList = ref<Array<any>>([])
 const tableFieldMetaList = ref<Array<any>>([])
