@@ -10,7 +10,9 @@
         >
           <template #reference>
             <el-button class="m-2">
-              <el-icon class="mr-1"><QuestionFilled/></el-icon>
+              <el-icon class="mr-1">
+                <QuestionFilled/>
+              </el-icon>
               {{ $t('hint.help') }}
             </el-button>
           </template>
@@ -57,16 +59,23 @@
         </div>
       </template>
       <div style="width: 100%;" v-if="currentCellPicUrlList.length">
-        <el-carousel height="70vh" :autoplay="false" v-loading.fullscreen.lock="isLoading" :loop="false"
-                     ref="carousel"
-                     @change="onCarouselChange"
-                     direction="vertical">
-          <el-carousel-item v-for="src in currentCellPicUrlList" :src="src">
-            <img :src="src" style="width: 100%;height: auto;"/>
-          </el-carousel-item>
-        </el-carousel>
+        <!--        <el-carousel height="70vh" :autoplay="false" v-loading.fullscreen.lock="isLoading" :loop="false"-->
+        <!--                     ref="carousel"-->
+        <!--                     @change="onCarouselChange"-->
+        <!--                     direction="vertical">-->
+        <!--          <el-carousel-item v-for="src in currentCellPicUrlList" :src="src">-->
+        <!--            <img :src="src" style="width: 100%;height: auto;"/>-->
+        <!--          </el-carousel-item>-->
+        <!--        </el-carousel>-->
+        <div class="flex flex-col w-full" style="height: 70vh;" v-loading.fullscreen.lock="isLoading">
+          <img v-for="pic in currentCellPicUrlList" :src="pic" class="mb-2" style="width: 100%;height: auto;"/>
+        </div>
       </div>
       <div v-else class="ml-2">{{ $t('hint.noPicture') }}</div>
+      <div class="flex flex-row justify-center w-full" style="position: fixed;bottom: 40px;">
+        <el-button>上一行</el-button>
+        <el-button type="primary">下一行</el-button>
+      </div>
     </div>
   </el-config-provider>
 </template>
