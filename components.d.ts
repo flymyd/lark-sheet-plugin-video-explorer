@@ -7,7 +7,6 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    ElButton: typeof import('element-plus/es')['ElButton']
     ElCarousel: typeof import('element-plus/es')['ElCarousel']
     ElCarouselItem: typeof import('element-plus/es')['ElCarouselItem']
     ElDropdown: typeof import('element-plus/es')['ElDropdown']
@@ -16,7 +15,6 @@ declare module 'vue' {
     ElIcon: typeof import('element-plus/es')['ElIcon']
     ElOption: typeof import('element-plus/es')['ElOption']
     ElSelect: typeof import('element-plus/es')['ElSelect']
-    I18n: typeof import('./src/components/i18n.vue')['default']
     I18nSwitcher: typeof import('./src/components/i18nSwitcher.vue')['default']
   }
   export interface ComponentCustomProperties {
