@@ -50,7 +50,7 @@
   </el-config-provider>
 </template>
 <script setup lang="ts">
-import {computed, onMounted, onUnmounted, reactive, ref, watch} from "vue";
+import {computed, onMounted, onUnmounted, reactive, ref} from "vue";
 import {bitable, IAttachmentField, IGridView} from "@lark-base-open/js-sdk";
 import {ElConfigProvider} from 'element-plus';
 import {useAppStore} from './store/modules/app'
