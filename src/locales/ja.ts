@@ -9,6 +9,8 @@ export default {
     prev: "前へ",
     next: "次へ",
     reset: 'リセット',
-    scrollToBrowse: '画像をスクロールして閲覧する'
+    scrollToBrowse: '画像をスクロールして閲覧する',
+    previewFieldConfig: 'プレビュー列設定',
+    previewFieldContent: 'プレビュー内容'
   }
 }

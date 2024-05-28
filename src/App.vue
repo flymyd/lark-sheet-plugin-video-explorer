@@ -1,51 +1,63 @@
 <template>
   <el-config-provider :locale="appStore.locale">
     <div class="flex flex-col overflow-x-hidden h-lvh">
-      <div class="flex flex-wrap items-center justify-between w-full pr-2">
-        <el-popover placement="top-start" :width="300" trigger="hover" :content="$t('hint.useHint')">
-          <template #reference>
-            <el-button class="m-2">
+      <el-collapse v-model="activeNames" class="w-full">
+        <el-collapse-item :title="$t('hint.previewFieldConfig')" name="1">
+          <div class="flex flex-wrap items-center justify-between w-full pr-2">
+            <el-popover placement="top-start" :width="300" trigger="hover" :content="$t('hint.useHint')">
+              <template #reference>
+                <el-button class="m-2">
+                  <el-icon class="mr-1">
+                    <QuestionFilled/>
+                  </el-icon>
+                  {{ $t('hint.help') }}
+                </el-button>
+              </template>
+            </el-popover>
+            <el-button class="m-2" @click="resetCache" ref="reset">
               <el-icon class="mr-1">
-                <QuestionFilled/>
+                <Refresh/>
               </el-icon>
-              {{ $t('hint.help') }}
+              {{ $t('hint.reset') }}
             </el-button>
-          </template>
-        </el-popover>
-        <el-button class="m-2" @click="resetCache" ref="reset">
-          <el-icon class="mr-1">
-            <Refresh/>
-          </el-icon>
-          {{ $t('hint.reset') }}
-        </el-button>
-      </div>
-      <div class="flex flex-col items-start ml-2 mb-2 pr-2">
-        <span class="my-2">{{ $t('hint.attachmentSelector') }}</span>
-        <el-select v-model="currentFieldId" size="large" class="flex-1" @change="onFieldListChange" ref="attachmentSelector">
-          <el-option v-for="item in attachmentFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
-        </el-select>
-      </div>
-      <div class="flex flex-col items-start ml-2 mb-2 pr-2">
-        <span class="my-2">{{ $t('hint.textSelector') }}</span>
-        <el-select v-model="previewTextFieldList" multiple @change="onPreviewChange" class="flex-1" :multiple-limit="4" ref="textSelector">
-          <el-option v-for="item in othersFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
-        </el-select>
-      </div>
-      <el-divider ref="scrollToBrowse">{{ $t('hint.scrollToBrowse') }}</el-divider>
-      <template v-if="previewTextFieldList.length">
-        <div class="flex flex-row ml-2 mb-2 pr-2" v-for="item in descriptions">
-          <span>{{ item.name ? item.name : '-' }}：</span>
-          <span>{{ tableVal ? tableVal[item.id] : '-' }}</span>
-        </div>
-      </template>
-      <div class="flex flex-col w-full overflow-y-scroll overflow-x-hidden pic-container"
+          </div>
+          <div class="flex flex-col items-start ml-2 mb-2 pr-2">
+            <span class="my-2">{{ $t('hint.attachmentSelector') }}</span>
+            <el-select v-model="currentFieldId" size="large" class="flex-1" @change="onFieldListChange"
+                       ref="attachmentSelector">
+              <el-option v-for="item in attachmentFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
+            </el-select>
+          </div>
+          <div class="flex flex-col items-start ml-2 mb-2 pr-2">
+            <span class="my-2">{{ $t('hint.textSelector') }}</span>
+            <el-select v-model="previewTextFieldList"
+                       multiple @change="onPreviewChange"
+                       collapse-tags
+                       collapse-tags-tooltip
+                       :max-collapse-tags="3"
+                       :multiple-limit="4"
+                       class="flex-1" ref="textSelector">
+              <el-option v-for="item in othersFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
+            </el-select>
+          </div>
+        </el-collapse-item>
+        <el-collapse-item :title="$t('hint.previewFieldContent')" name="2" v-if="previewTextFieldList.length">
+          <div class="mt-2 text-sm">
+            <div class="flex flex-row ml-2 mb-2 pr-2" v-for="item in descriptions">
+              <span>{{ item.name ? item.name : '-' }}：</span>
+              <span>{{ tableVal ? tableVal[item.id] || '-' : '-' }}</span>
+            </div>
+          </div>
+        </el-collapse-item>
+      </el-collapse>
+      <div class="flex flex-col w-full overflow-y-scroll overflow-x-hidden pic-container mt-2"
            v-loading.fullscreen.lock="isLoading" v-if="currentCellPicUrlList.length">
         <template v-for="(pic, index) in currentCellPicUrlList" v-if="!isLoading">
           <img :src="pic" :class="['mb-2 w-full',index===currentCellPicUrlList.length-1?'pb-20':'']"/>
         </template>
       </div>
       <div v-else
-           class="ml-2 min-h-56 flex flex-row justify-center items-center bg-[#f5f5f5] text-[#8d8d8d] text-lg select-none">
+           class="m-2 min-h-56 flex flex-row justify-center items-center bg-[#f5f5f5] text-[#8d8d8d] text-lg select-none">
         <el-icon class="mr-1">
           <WarningFilled/>
         </el-icon>
@@ -68,33 +80,33 @@
         </el-button-group>
       </div>
     </div>
-<!--    <el-tour v-model="openTour">-->
-<!--      <el-tour-step title="介绍" description="欢迎使用图库浏览器，接下来是简单的使用说明。"/>-->
-<!--      <el-tour-step-->
-<!--          title="图片列"-->
-<!--          description="请在此处选择待预览的图片列，默认会选中表格的第一个附件列。"-->
-<!--          placement="bottom"-->
-<!--          :target="attachmentSelector?.$el"-->
-<!--      />-->
-<!--      <el-tour-step-->
-<!--          title="内容列"-->
-<!--          description="请在此处选择待预览的内容列（支持多选），默认会选中表格的索引列。"-->
-<!--          placement="bottom"-->
-<!--          :target="textSelector?.$el"-->
-<!--      />-->
-<!--      <el-tour-step-->
-<!--          title="图片浏览"-->
-<!--          description="先点击左侧表格的任意单元格进行定位，再点击一次本插件窗口后使用滚轮进行滚动浏览。"-->
-<!--          placement="bottom"-->
-<!--          :target="scrollToBrowse?.$el"-->
-<!--      />-->
-<!--      <el-tour-step-->
-<!--          title="快速翻页"-->
-<!--          description="使用导航按钮以换行。"-->
-<!--          placement="bottom"-->
-<!--          :target="prevAndNext?.$el"-->
-<!--      />-->
-<!--    </el-tour>-->
+    <!--    <el-tour v-model="openTour">-->
+    <!--      <el-tour-step title="介绍" description="欢迎使用图库浏览器，接下来是简单的使用说明。"/>-->
+    <!--      <el-tour-step-->
+    <!--          title="图片列"-->
+    <!--          description="请在此处选择待预览的图片列，默认会选中表格的第一个附件列。"-->
+    <!--          placement="bottom"-->
+    <!--          :target="attachmentSelector?.$el"-->
+    <!--      />-->
+    <!--      <el-tour-step-->
+    <!--          title="内容列"-->
+    <!--          description="请在此处选择待预览的内容列（支持多选），默认会选中表格的索引列。"-->
+    <!--          placement="bottom"-->
+    <!--          :target="textSelector?.$el"-->
+    <!--      />-->
+    <!--      <el-tour-step-->
+    <!--          title="图片浏览"-->
+    <!--          description="先点击左侧表格的任意单元格进行定位，再点击一次本插件窗口后使用滚轮进行滚动浏览。"-->
+    <!--          placement="bottom"-->
+    <!--          :target="scrollToBrowse?.$el"-->
+    <!--      />-->
+    <!--      <el-tour-step-->
+    <!--          title="快速翻页"-->
+    <!--          description="使用导航按钮以换行。"-->
+    <!--          placement="bottom"-->
+    <!--          :target="prevAndNext?.$el"-->
+    <!--      />-->
+    <!--    </el-tour>-->
   </el-config-provider>
 </template>
 <script setup lang="ts">
@@ -109,7 +121,7 @@ import {useDark} from '@vueuse/core'
 const prevAndNext = ref<any>(null);
 const attachmentSelector = ref<any>(null);
 const textSelector = ref<any>(null);
-const scrollToBrowse = ref<any>(null);
+const activeNames = ref(['1'])
 
 const appStore = useAppStore()
 useTheme();
@@ -205,9 +217,11 @@ onMounted(async () => {
     await onPreviewChange([primary[0].id])
   }
 })
-const resetCache = () => {
+const resetCache = async () => {
   previewTextFieldList.value = defaultTextFieldSet.value
-  onPreviewChange(defaultTextFieldSet.value)
+  await onPreviewChange(defaultTextFieldSet.value)
+  tableVal.value = {}
+  currentCellPicUrlList.value = []
 }
 const attachmentFieldMetaList = computed(() => {
   const list = tableFieldMetaList.value.filter(obj => obj.type === 17);
@@ -264,5 +278,12 @@ const switchLang = (command: string) => {
 .pic-container::-webkit-scrollbar-thumb {
   background: #b0b0b0;
   border-radius: 12px;
+}
+
+:deep(.el-collapse-item__header) {
+  padding-left: 0.5rem;
+}
+:deep(.el-collapse-item__content) {
+  padding-bottom: 0.5rem;
 }
 </style>

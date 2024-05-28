@@ -9,6 +9,8 @@ export default {
     prev: 'Prev',
     next: 'Next',
     reset: 'Reset',
-    scrollToBrowse: 'Scroll to browse images'
+    scrollToBrowse: 'Scroll to browse images',
+    previewFieldConfig: 'Preview Column Configuration',
+    previewFieldContent: 'Preview Content'
   }
 }
