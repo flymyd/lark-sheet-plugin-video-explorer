@@ -12,7 +12,7 @@
             </el-button>
           </template>
         </el-popover>
-        <el-button class="m-2" @click="resetCache">
+        <el-button class="m-2" @click="resetCache" ref="reset">
           <el-icon class="mr-1">
             <Refresh/>
           </el-icon>
@@ -21,17 +21,17 @@
       </div>
       <div class="flex flex-col items-start ml-2 mb-2 pr-2">
         <span class="my-2">{{ $t('hint.attachmentSelector') }}</span>
-        <el-select v-model="currentFieldId" size="large" class="flex-1" @change="onFieldListChange">
+        <el-select v-model="currentFieldId" size="large" class="flex-1" @change="onFieldListChange" ref="attachmentSelector">
           <el-option v-for="item in attachmentFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
         </el-select>
       </div>
       <div class="flex flex-col items-start ml-2 mb-2 pr-2">
         <span class="my-2">{{ $t('hint.textSelector') }}</span>
-        <el-select v-model="previewTextFieldList" multiple @change="onPreviewChange" class="flex-1" :multiple-limit="4">
+        <el-select v-model="previewTextFieldList" multiple @change="onPreviewChange" class="flex-1" :multiple-limit="4" ref="textSelector">
           <el-option v-for="item in othersFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
         </el-select>
       </div>
-      <el-divider>{{ $t('hint.scrollToBrowse') }}</el-divider>
+      <el-divider ref="scrollToBrowse">{{ $t('hint.scrollToBrowse') }}</el-divider>
       <template v-if="previewTextFieldList.length">
         <div class="flex flex-row ml-2 mb-2 pr-2" v-for="item in descriptions">
           <span>{{ item.name ? item.name : '-' }}：</span>
@@ -44,22 +44,57 @@
           <img :src="pic" :class="['mb-2 w-full',index===currentCellPicUrlList.length-1?'pb-20':'']"/>
         </template>
       </div>
-      <div v-else class="ml-2">{{ $t('hint.noPicture') }}</div>
+      <div v-else
+           class="ml-2 min-h-56 flex flex-row justify-center items-center bg-[#f5f5f5] text-[#8d8d8d] text-lg select-none">
+        <el-icon class="mr-1">
+          <WarningFilled/>
+        </el-icon>
+        {{ $t('hint.noPicture') }}
+      </div>
       <div class="flex flex-row justify-center w-full bottom-12 fixed">
-        <el-button @click="changePage(false)">
-          <el-icon>
-            <ArrowLeftBold/>
-          </el-icon>
-          {{ $t('hint.prev') }}
-        </el-button>
-        <el-button type="primary" @click="changePage(true)">
-          {{ $t('hint.next') }}
-          <el-icon>
-            <ArrowRightBold/>
-          </el-icon>
-        </el-button>
+        <el-button-group ref="prevAndNext">
+          <el-button @click="changePage(false)">
+            <el-icon>
+              <ArrowLeftBold/>
+            </el-icon>
+            {{ $t('hint.prev') }}
+          </el-button>
+          <el-button type="primary" @click="changePage(true)">
+            {{ $t('hint.next') }}
+            <el-icon>
+              <ArrowRightBold/>
+            </el-icon>
+          </el-button>
+        </el-button-group>
       </div>
     </div>
+<!--    <el-tour v-model="openTour">-->
+<!--      <el-tour-step title="介绍" description="欢迎使用图库浏览器，接下来是简单的使用说明。"/>-->
+<!--      <el-tour-step-->
+<!--          title="图片列"-->
+<!--          description="请在此处选择待预览的图片列，默认会选中表格的第一个附件列。"-->
+<!--          placement="bottom"-->
+<!--          :target="attachmentSelector?.$el"-->
+<!--      />-->
+<!--      <el-tour-step-->
+<!--          title="内容列"-->
+<!--          description="请在此处选择待预览的内容列（支持多选），默认会选中表格的索引列。"-->
+<!--          placement="bottom"-->
+<!--          :target="textSelector?.$el"-->
+<!--      />-->
+<!--      <el-tour-step-->
+<!--          title="图片浏览"-->
+<!--          description="先点击左侧表格的任意单元格进行定位，再点击一次本插件窗口后使用滚轮进行滚动浏览。"-->
+<!--          placement="bottom"-->
+<!--          :target="scrollToBrowse?.$el"-->
+<!--      />-->
+<!--      <el-tour-step-->
+<!--          title="快速翻页"-->
+<!--          description="使用导航按钮以换行。"-->
+<!--          placement="bottom"-->
+<!--          :target="prevAndNext?.$el"-->
+<!--      />-->
+<!--    </el-tour>-->
   </el-config-provider>
 </template>
 <script setup lang="ts">
@@ -67,8 +102,14 @@ import {computed, onMounted, onUnmounted, reactive, ref} from "vue";
 import {bitable, IAttachmentField, IGridView} from "@lark-base-open/js-sdk";
 import {ElConfigProvider} from 'element-plus';
 import {useAppStore} from './store/modules/app'
-import {QuestionFilled, Refresh, ArrowLeftBold, ArrowRightBold} from '@element-plus/icons-vue'
+import {QuestionFilled, Refresh, ArrowLeftBold, ArrowRightBold, WarningFilled} from '@element-plus/icons-vue'
 import {useTheme} from './hooks/useTheme';
+import {useDark} from '@vueuse/core'
+
+const prevAndNext = ref<any>(null);
+const attachmentSelector = ref<any>(null);
+const textSelector = ref<any>(null);
+const scrollToBrowse = ref<any>(null);
 
 const appStore = useAppStore()
 useTheme();
@@ -142,10 +183,13 @@ const onSelectionChange = async (event: any) => {
   }
 }
 const defaultTextFieldSet = ref<Array<any>>([])
+const openTour = ref(false)
 onMounted(async () => {
   await bitable.bridge.getLanguage().then((lang) => {
     switchLang(lang)
   })
+  useDark()
+  openTour.value = true;
   const table = await bitable.base.getActiveTable();
   onSelectionChangeHandler = bitable.base.onSelectionChange(onSelectionChange)
   // 获取列的列表
