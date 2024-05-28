@@ -7,27 +7,35 @@ import en from 'element-plus/es/locale/lang/en';
 import ja from 'element-plus/es/locale/lang/ja';
 import {useI18n} from "vue-i18n";
 
-// setup
 export const useAppStore = defineStore('app', () => {
   const {locale: i18n} = useI18n()
-  const language = useStorage('language', 'zh-cn');
+  const language = useStorage('language', 'en');
+  const previewTextFields: any = useStorage('textFields', []);
   i18n.value = language.value;
   const locale = computed(() => {
-    if (language?.value == 'en') {
-      return en;
+    if (language?.value == 'zh') {
+      return zhCn;
     } else if (language?.value == 'ja') {
       return ja;
     } else {
-      return zhCn;
+      return en;
     }
   });
+
   function changeLanguage(val: string) {
     language.value = val;
     i18n.value = val;
   }
+
+  function changePreviewTextFields(val: any) {
+    previewTextFields.value = val;
+  }
+
   return {
     language,
     locale,
-    changeLanguage
+    changeLanguage,
+    previewTextFields,
+    changePreviewTextFields
   };
 });

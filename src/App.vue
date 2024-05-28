@@ -1,13 +1,8 @@
 <template>
   <el-config-provider :locale="appStore.locale">
-    <div class="flex flex-col overflow-x-hidden">
+    <div class="flex flex-col overflow-x-hidden h-lvh">
       <div class="flex flex-wrap items-center justify-between w-full pr-2">
-        <el-popover
-            placement="top-start"
-            :width="300"
-            trigger="hover"
-            :content="$t('hint.useHint')"
-        >
+        <el-popover placement="top-start" :width="300" trigger="hover" :content="$t('hint.useHint')">
           <template #reference>
             <el-button class="m-2">
               <el-icon class="mr-1">
@@ -17,25 +12,12 @@
             </el-button>
           </template>
         </el-popover>
-        <el-dropdown @command="switchLang">
-          <div class="flex flex-row items-center">
-            <svg preserveAspectRatio="xMidYMid meet" viewBox="0 0 24 24" width="1.2em" height="1.2em"
-                 data-v-12008bb2="">
-              <path fill="currentColor"
-                    d="m18.5 10l4.4 11h-2.155l-1.201-3h-4.09l-1.199 3h-2.154L16.5 10h2zM10 2v2h6v2h-1.968a18.222 18.222 0 0 1-3.62 6.301a14.864 14.864 0 0 0 2.336 1.707l-.751 1.878A17.015 17.015 0 0 1 9 13.725a16.676 16.676 0 0 1-6.201 3.548l-.536-1.929a14.7 14.7 0 0 0 5.327-3.042A18.078 18.078 0 0 1 4.767 8h2.24A16.032 16.032 0 0 0 9 10.877a16.165 16.165 0 0 0 2.91-4.876L2 6V4h6V2h2zm7.5 10.885L16.253 16h2.492L17.5 12.885z"></path>
-            </svg>
-            <el-icon class="el-icon--right">
-              <arrow-down/>
-            </el-icon>
-          </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="zh-cn">中文</el-dropdown-item>
-              <el-dropdown-item command="en">English</el-dropdown-item>
-              <el-dropdown-item command="ja">日本語</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <el-button class="m-2" @click="resetCache">
+          <el-icon class="mr-1">
+            <Refresh/>
+          </el-icon>
+          {{ $t('hint.reset') }}
+        </el-button>
       </div>
       <div class="flex flex-col items-start ml-2 mb-2 pr-2">
         <span class="my-2">{{ $t('hint.attachmentSelector') }}</span>
@@ -55,10 +37,9 @@
           <span>{{ tableVal ? tableVal[item.id] : '-' }}</span>
         </div>
       </template>
-      <div class="w-full" v-if="currentCellPicUrlList.length">
-        <div class="flex flex-col w-full" v-loading.fullscreen.lock="isLoading">
-          <img v-for="pic in currentCellPicUrlList" :src="pic" class="mb-2 w-full"/>
-        </div>
+      <div class="flex flex-col w-full overflow-y-scroll overflow-x-hidden pic-container"
+           v-loading.fullscreen.lock="isLoading" v-if="currentCellPicUrlList.length">
+        <img v-for="pic in currentCellPicUrlList" :src="pic" class="mb-2 w-full"/>
       </div>
       <div v-else class="ml-2">{{ $t('hint.noPicture') }}</div>
       <div class="flex flex-row justify-center w-full bottom-12 fixed">
@@ -69,11 +50,11 @@
   </el-config-provider>
 </template>
 <script setup lang="ts">
-import {computed, onMounted, onUnmounted, reactive, ref} from "vue";
+import {computed, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {bitable, IAttachmentField, IGridView} from "@lark-base-open/js-sdk";
 import {ElConfigProvider} from 'element-plus';
 import {useAppStore} from './store/modules/app'
-import {ArrowDown, QuestionFilled} from '@element-plus/icons-vue'
+import {QuestionFilled, Refresh} from '@element-plus/icons-vue'
 import {useTheme} from './hooks/useTheme';
 
 const appStore = useAppStore()
@@ -145,16 +126,30 @@ const onSelectionChange = async (event: any) => {
     carouselIndex.oldVal = 0;
   }
 }
+const defaultTextFieldSet = ref<Array<any>>([])
 onMounted(async () => {
+  await bitable.bridge.getLanguage().then((lang) => {
+    switchLang(lang)
+  })
   const table = await bitable.base.getActiveTable();
   onSelectionChangeHandler = bitable.base.onSelectionChange(onSelectionChange)
   // 获取列的列表
   tableFieldMetaList.value = await table.getFieldMetaList()
   const primary = tableFieldMetaList.value.filter(obj => obj.isPrimary)
+  previewTextFieldList.value = tableFieldMetaList
+      .value.map(obj => obj.id)
+      .filter((value: any) => appStore.previewTextFields.includes(value));
   if (primary.length) {
-    previewTextFieldList.value.push(primary[0].id)
+    defaultTextFieldSet.value = [primary[0].id];
+  }
+  if (primary.length && !appStore.previewTextFields.length) {
+    await onPreviewChange([primary[0].id])
   }
 })
+const resetCache = () => {
+  previewTextFieldList.value = defaultTextFieldSet.value
+  onPreviewChange(defaultTextFieldSet.value)
+}
 const attachmentFieldMetaList = computed(() => {
   const list = tableFieldMetaList.value.filter(obj => obj.type === 17);
   if (list.length) {
@@ -174,7 +169,8 @@ const onFieldListChange = async (e: any) => {
   const viewId = view.id;
   await onSelectionChange({data: {viewId, recordId: lastRecordId.value, refresh: true}})
 }
-const onPreviewChange = async () => {
+const onPreviewChange = async (e: any) => {
+  appStore.changePreviewTextFields(e);
   const table = await bitable.base.getActiveTable();
   const view = await table.getActiveView()
   const viewId = view.id;
@@ -196,5 +192,18 @@ const switchLang = (command: string) => {
 
 :deep(.is-animating) {
   transition: none;
+}
+
+.pic-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.pic-container::-webkit-scrollbar-track {
+  background: #f8f8f8;
+}
+
+.pic-container::-webkit-scrollbar-thumb {
+  background: #b0b0b0;
+  border-radius: 12px;
 }
 </style>

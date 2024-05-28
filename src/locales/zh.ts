@@ -7,6 +7,7 @@ export default {
     noPicture: '暂无图片',
     help: '如何使用',
     prev: '上一行',
-    next: '下一行'
+    next: '下一行',
+    reset: '重置'
   }
 }

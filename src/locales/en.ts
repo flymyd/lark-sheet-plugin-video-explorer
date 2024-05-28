@@ -7,6 +7,7 @@ export default {
     noPicture: 'No pictures available',
     help: 'How to use',
     prev: 'Prev',
-    next: 'Next'
+    next: 'Next',
+    reset: 'Reset'
   }
 }

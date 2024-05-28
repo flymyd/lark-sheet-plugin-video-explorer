@@ -7,7 +7,7 @@ const messages = {
   "en": {
     ...enLocale,
   },
-  "zh-cn": {
+  "zh": {
     ...zhLocale,
   },
   "ja": {
@@ -18,7 +18,7 @@ const messages = {
 const i18n = createI18n({
   legacy: false,
   globalInjection: true,
-  locale: 'zh-cn',
+  locale: 'en',
   messages: messages
 })
 export default i18n
