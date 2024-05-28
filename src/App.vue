@@ -39,16 +39,13 @@
       </div>
       <div class="flex flex-col items-start ml-2 mb-2 pr-2">
         <span class="my-2">{{ $t('hint.attachmentSelector') }}</span>
-        <el-select v-model="currentFieldId" size="large" style="flex: 1;"
-                   @change="onFieldListChange">
+        <el-select v-model="currentFieldId" size="large" class="flex-1" @change="onFieldListChange">
           <el-option v-for="item in attachmentFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
         </el-select>
       </div>
       <div class="flex flex-col items-start ml-2 mb-2 pr-2">
         <span class="my-2">{{ $t('hint.textSelector') }}</span>
-        <el-select v-model="previewTextFieldList" multiple
-                   style="flex: 1;"
-                   @change="onPreviewChange">
+        <el-select v-model="previewTextFieldList" multiple @change="onPreviewChange" class="flex-1">
           <el-option v-for="item in othersFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
         </el-select>
       </div>
@@ -58,23 +55,15 @@
           <span>{{ tableVal ? tableVal[item.id] : '-' }}</span>
         </div>
       </template>
-      <div style="width: 100%;" v-if="currentCellPicUrlList.length">
-        <!--        <el-carousel height="70vh" :autoplay="false" v-loading.fullscreen.lock="isLoading" :loop="false"-->
-        <!--                     ref="carousel"-->
-        <!--                     @change="onCarouselChange"-->
-        <!--                     direction="vertical">-->
-        <!--          <el-carousel-item v-for="src in currentCellPicUrlList" :src="src">-->
-        <!--            <img :src="src" style="width: 100%;height: auto;"/>-->
-        <!--          </el-carousel-item>-->
-        <!--        </el-carousel>-->
-        <div class="flex flex-col w-full" style="height: 70vh;" v-loading.fullscreen.lock="isLoading">
-          <img v-for="pic in currentCellPicUrlList" :src="pic" class="mb-2" style="width: 100%;height: auto;"/>
+      <div class="w-full" v-if="currentCellPicUrlList.length">
+        <div class="flex flex-col w-full" v-loading.fullscreen.lock="isLoading">
+          <img v-for="pic in currentCellPicUrlList" :src="pic" class="mb-2 w-full"/>
         </div>
       </div>
       <div v-else class="ml-2">{{ $t('hint.noPicture') }}</div>
-      <div class="flex flex-row justify-center w-full" style="position: fixed;bottom: 40px;">
-        <el-button @click="changePage(false)">上一行</el-button>
-        <el-button type="primary" @click="changePage(true)">下一行</el-button>
+      <div class="flex flex-row justify-center w-full bottom-12 fixed">
+        <el-button @click="changePage(false)">{{ $t('hint.prev') }}</el-button>
+        <el-button type="primary" @click="changePage(true)">{{ $t('hint.next') }}</el-button>
       </div>
     </div>
   </el-config-provider>
@@ -98,48 +87,12 @@ const currentRecordId = ref<string>("")
 const currentViewId = ref<string>("")
 const isLoading = ref(false)
 const lastRecordId = ref("");
-// const carousel = ref<any>(null);
 const carouselIndex = reactive({
   newVal: 0,
   oldVal: 0
 })
 const previewTextFieldList = ref<Array<any>>([])
-// const onCarouselChange = (newVal: any, oldVal: any) => {
-//   carouselIndex.newVal = newVal;
-//   carouselIndex.oldVal = oldVal;
-// }
 const tableVal = ref<any>({})
-// const handleKeyDown = async (event: any) => {
-//   if (event.keyCode === 37 || event.keyCode === 38) {
-//     if (carouselIndex.newVal === 0) {  // 假设 carouselIndex.newVal 表示当前轮播项索引
-//       const currentRecordIndex = visibleRecordIdList.value.findIndex(id => id === currentRecordId.value);
-//       if (currentRecordIndex > 0) {
-//         const prevRecordId = visibleRecordIdList.value[currentRecordIndex - 1];
-//         const table = await bitable.base.getActiveTable();
-//         const view = await table.getActiveView()
-//         const viewId = view.id;
-//         await onSelectionChange({data: {viewId, recordId: prevRecordId, refresh: true}})
-//         carousel.value.setActiveItem(currentCellPicUrlList.value.length - 1)  // 假设跳到前一记录的最后一张图片
-//       } else {
-//         carousel.value.prev();
-//       }
-//     } else {
-//       carousel.value.prev();
-//     }
-//   } else if (event.keyCode === 39 || event.keyCode === 40) {
-//     if (currentCellPicUrlList.value.length === 1 || currentCellPicUrlList.value.length <= carouselIndex.newVal + 1) {
-//       const currentRecordIndex = visibleRecordIdList.value.findIndex(id => id === currentRecordId.value);
-//       if (currentRecordIndex !== -1 && currentRecordIndex + 1 < visibleRecordIdList.value.length) {
-//         const nextRecordId = visibleRecordIdList.value[currentRecordIndex + 1];
-//         const table = await bitable.base.getActiveTable();
-//         const view = await table.getActiveView()
-//         const viewId = view.id;
-//         await onSelectionChange({data: {viewId, recordId: nextRecordId, refresh: true}})
-//         carousel.value.setActiveItem(0)
-//       } else carousel.value.next();
-//     } else carousel.value.next();
-//   }
-// };
 const changePage = async (next: boolean) => {
   const currentRecordIndex = visibleRecordIdList.value.findIndex(id => id === currentRecordId.value);
   const table = await bitable.base.getActiveTable();
@@ -193,11 +146,14 @@ const onSelectionChange = async (event: any) => {
   }
 }
 onMounted(async () => {
-  // document.addEventListener('keydown', handleKeyDown);
   const table = await bitable.base.getActiveTable();
   onSelectionChangeHandler = bitable.base.onSelectionChange(onSelectionChange)
   // 获取列的列表
   tableFieldMetaList.value = await table.getFieldMetaList()
+  const primary = tableFieldMetaList.value.filter(obj => obj.isPrimary)
+  if (primary.length) {
+    previewTextFieldList.value.push(primary[0].id)
+  }
 })
 const attachmentFieldMetaList = computed(() => {
   const list = tableFieldMetaList.value.filter(obj => obj.type === 17);
@@ -228,7 +184,6 @@ onUnmounted(() => {
   if (onSelectionChangeHandler) {
     onSelectionChangeHandler = null;
   }
-  // document.removeEventListener('keydown', handleKeyDown);
 })
 const switchLang = (command: string) => {
   appStore.changeLanguage(command)
