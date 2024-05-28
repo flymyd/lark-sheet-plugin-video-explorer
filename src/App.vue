@@ -27,7 +27,7 @@
       </div>
       <div class="flex flex-col items-start ml-2 mb-2 pr-2">
         <span class="my-2">{{ $t('hint.textSelector') }}</span>
-        <el-select v-model="previewTextFieldList" multiple @change="onPreviewChange" class="flex-1">
+        <el-select v-model="previewTextFieldList" multiple @change="onPreviewChange" class="flex-1" :multiple-limit="4">
           <el-option v-for="item in othersFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
         </el-select>
       </div>
@@ -40,8 +40,9 @@
       </template>
       <div class="flex flex-col w-full overflow-y-scroll overflow-x-hidden pic-container"
            v-loading.fullscreen.lock="isLoading" v-if="currentCellPicUrlList.length">
-        <img v-for="(pic, index) in currentCellPicUrlList" :src="pic"
-             :class="['mb-2 w-full',index===currentCellPicUrlList.length-1?'pb-20':'']"/>
+        <template v-for="(pic, index) in currentCellPicUrlList" v-if="!isLoading">
+          <img :src="pic" :class="['mb-2 w-full',index===currentCellPicUrlList.length-1?'pb-20':'']"/>
+        </template>
       </div>
       <div v-else class="ml-2">{{ $t('hint.noPicture') }}</div>
       <div class="flex flex-row justify-center w-full bottom-12 fixed">
@@ -124,16 +125,18 @@ const onSelectionChange = async (event: any) => {
         });
       }
       tableVal.value = tableV;
+      isLoading.value = false;
     } else {
       lastRecordId.value = recordId;
       currentCellPicUrlList.value = []
       tableVal.value = null;
+      isLoading.value = false;
     }
   } catch (e) {
     currentCellPicUrlList.value = []
     tableVal.value = null;
-  } finally {
     isLoading.value = false;
+  } finally {
     carouselIndex.newVal = 0;
     carouselIndex.oldVal = 0;
   }
