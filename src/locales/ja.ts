@@ -8,6 +8,7 @@ export default {
     help: '使用方法',
     prev: "前へ",
     next: "次へ",
-    reset: 'リセット'
+    reset: 'リセット',
+    scrollToBrowse: '画像をスクロールして閲覧する'
   }
 }

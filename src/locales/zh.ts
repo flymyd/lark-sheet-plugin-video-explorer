@@ -8,6 +8,7 @@ export default {
     help: '如何使用',
     prev: '上一行',
     next: '下一行',
-    reset: '重置'
+    reset: '重置',
+    scrollToBrowse: '滚动以浏览图片'
   }
 }

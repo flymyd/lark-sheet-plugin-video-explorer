@@ -31,6 +31,7 @@
           <el-option v-for="item in othersFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
         </el-select>
       </div>
+      <el-divider>{{ $t('hint.scrollToBrowse') }}</el-divider>
       <template v-if="previewTextFieldList.length">
         <div class="flex flex-row ml-2 mb-2 pr-2" v-for="item in descriptions">
           <span>{{ item.name ? item.name : '-' }}：</span>
@@ -39,12 +40,23 @@
       </template>
       <div class="flex flex-col w-full overflow-y-scroll overflow-x-hidden pic-container"
            v-loading.fullscreen.lock="isLoading" v-if="currentCellPicUrlList.length">
-        <img v-for="pic in currentCellPicUrlList" :src="pic" class="mb-2 w-full"/>
+        <img v-for="(pic, index) in currentCellPicUrlList" :src="pic"
+             :class="['mb-2 w-full',index===currentCellPicUrlList.length-1?'pb-20':'']"/>
       </div>
       <div v-else class="ml-2">{{ $t('hint.noPicture') }}</div>
       <div class="flex flex-row justify-center w-full bottom-12 fixed">
-        <el-button @click="changePage(false)">{{ $t('hint.prev') }}</el-button>
-        <el-button type="primary" @click="changePage(true)">{{ $t('hint.next') }}</el-button>
+        <el-button @click="changePage(false)">
+          <el-icon>
+            <ArrowLeftBold/>
+          </el-icon>
+          {{ $t('hint.prev') }}
+        </el-button>
+        <el-button type="primary" @click="changePage(true)">
+          {{ $t('hint.next') }}
+          <el-icon>
+            <ArrowRightBold/>
+          </el-icon>
+        </el-button>
       </div>
     </div>
   </el-config-provider>
@@ -54,7 +66,7 @@ import {computed, onMounted, onUnmounted, reactive, ref} from "vue";
 import {bitable, IAttachmentField, IGridView} from "@lark-base-open/js-sdk";
 import {ElConfigProvider} from 'element-plus';
 import {useAppStore} from './store/modules/app'
-import {QuestionFilled, Refresh} from '@element-plus/icons-vue'
+import {QuestionFilled, Refresh, ArrowLeftBold, ArrowRightBold} from '@element-plus/icons-vue'
 import {useTheme} from './hooks/useTheme';
 
 const appStore = useAppStore()

@@ -8,6 +8,7 @@ export default {
     help: 'How to use',
     prev: 'Prev',
     next: 'Next',
-    reset: 'Reset'
+    reset: 'Reset',
+    scrollToBrowse: 'Scroll to browse images'
   }
 }
