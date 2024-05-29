@@ -57,7 +57,12 @@
         </template>
       </div>
       <div v-else
-           class="m-2 min-h-56 flex flex-row justify-center items-center bg-[#f5f5f5] text-[#8d8d8d] text-lg select-none">
+           class="m-2 min-h-56 flex flex-row justify-center items-center text-[#8d8d8d] text-lg select-none"
+           :style="{
+              background: currentTheme=='DARK'?'#707070':'#f5f5f5',
+              color: currentTheme=='DARK'?'#bebebe':'#8d8d8d'
+            }"
+      >
         <el-icon class="mr-1">
           <WarningFilled/>
         </el-icon>
@@ -65,7 +70,7 @@
       </div>
       <div class="flex flex-row justify-center w-full bottom-12 fixed">
         <el-button-group ref="prevAndNext">
-          <el-button @click="changePage(false)">
+          <el-button type="warning" @click="changePage(false)">
             <el-icon>
               <ArrowLeftBold/>
             </el-icon>
@@ -116,7 +121,6 @@ import {ElConfigProvider} from 'element-plus';
 import {useAppStore} from './store/modules/app'
 import {QuestionFilled, Refresh, ArrowLeftBold, ArrowRightBold, WarningFilled} from '@element-plus/icons-vue'
 import {useTheme} from './hooks/useTheme';
-import {useDark} from '@vueuse/core'
 
 const prevAndNext = ref<any>(null);
 const attachmentSelector = ref<any>(null);
@@ -124,7 +128,7 @@ const textSelector = ref<any>(null);
 const activeNames = ref(['1'])
 
 const appStore = useAppStore()
-useTheme();
+const {theme: currentTheme} = useTheme();
 let onSelectionChangeHandler: any = null;
 const currentCellPicUrlList = ref<Array<any>>([])
 const tableFieldMetaList = ref<Array<any>>([])
@@ -200,7 +204,6 @@ onMounted(async () => {
   await bitable.bridge.getLanguage().then((lang) => {
     switchLang(lang)
   })
-  useDark()
   openTour.value = true;
   const table = await bitable.base.getActiveTable();
   onSelectionChangeHandler = bitable.base.onSelectionChange(onSelectionChange)
@@ -283,6 +286,7 @@ const switchLang = (command: string) => {
 :deep(.el-collapse-item__header) {
   padding-left: 0.5rem;
 }
+
 :deep(.el-collapse-item__content) {
   padding-bottom: 0.5rem;
 }

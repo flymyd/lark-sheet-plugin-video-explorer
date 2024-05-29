@@ -7,8 +7,8 @@ import en from 'element-plus/es/locale/lang/en'
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 import i18n from './i18n.ts'
-import Vconsole from "vconsole";
-new Vconsole();
+// import Vconsole from "vconsole";
+// new Vconsole();
 
 const pinia = createPinia()
 createApp(App).use(pinia).use(ElementPlus, {locale: en}).use(i18n).mount('#app')
