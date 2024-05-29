@@ -85,33 +85,6 @@
         </el-button-group>
       </div>
     </div>
-    <!--    <el-tour v-model="openTour">-->
-    <!--      <el-tour-step title="介绍" description="欢迎使用图库浏览器，接下来是简单的使用说明。"/>-->
-    <!--      <el-tour-step-->
-    <!--          title="图片列"-->
-    <!--          description="请在此处选择待预览的图片列，默认会选中表格的第一个附件列。"-->
-    <!--          placement="bottom"-->
-    <!--          :target="attachmentSelector?.$el"-->
-    <!--      />-->
-    <!--      <el-tour-step-->
-    <!--          title="内容列"-->
-    <!--          description="请在此处选择待预览的内容列（支持多选），默认会选中表格的索引列。"-->
-    <!--          placement="bottom"-->
-    <!--          :target="textSelector?.$el"-->
-    <!--      />-->
-    <!--      <el-tour-step-->
-    <!--          title="图片浏览"-->
-    <!--          description="先点击左侧表格的任意单元格进行定位，再点击一次本插件窗口后使用滚轮进行滚动浏览。"-->
-    <!--          placement="bottom"-->
-    <!--          :target="scrollToBrowse?.$el"-->
-    <!--      />-->
-    <!--      <el-tour-step-->
-    <!--          title="快速翻页"-->
-    <!--          description="使用导航按钮以换行。"-->
-    <!--          placement="bottom"-->
-    <!--          :target="prevAndNext?.$el"-->
-    <!--      />-->
-    <!--    </el-tour>-->
   </el-config-provider>
 </template>
 <script setup lang="ts">
@@ -125,7 +98,7 @@ import {useTheme} from './hooks/useTheme';
 const prevAndNext = ref<any>(null);
 const attachmentSelector = ref<any>(null);
 const textSelector = ref<any>(null);
-const activeNames = ref(['1'])
+const activeNames = ref(['1', '2'])
 
 const appStore = useAppStore()
 const {theme: currentTheme} = useTheme();
