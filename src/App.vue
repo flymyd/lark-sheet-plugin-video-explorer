@@ -50,10 +50,16 @@
           </div>
         </el-collapse-item>
       </el-collapse>
+      <el-image-viewer
+          v-if="imageViewer"
+          :initial-index="previewIndex"
+          @close="()=>{imageViewer=false}"
+          :url-list="currentCellPicUrlList"/>
       <div class="flex flex-col w-full overflow-y-scroll overflow-x-hidden pic-container mt-2"
            v-loading.fullscreen.lock="isLoading" v-if="currentCellPicUrlList.length">
         <template v-for="(pic, index) in currentCellPicUrlList" v-if="!isLoading">
-          <img :src="pic" :class="['mb-2 w-full',index===currentCellPicUrlList.length-1?'pb-20':'']"/>
+          <img :src="pic" :class="['mb-2 w-full cursor-pointer',index===currentCellPicUrlList.length-1?'pb-20':'']"
+               @click="showPic(index)"/>
         </template>
       </div>
       <div v-else
@@ -232,6 +238,12 @@ onUnmounted(() => {
 })
 const switchLang = (command: string) => {
   appStore.changeLanguage(command)
+}
+const imageViewer = ref(false)
+const previewIndex = ref(0)
+const showPic = (index: number) => {
+  previewIndex.value = index;
+  imageViewer.value = true
 }
 </script>
 <style scoped>
