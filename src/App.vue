@@ -23,9 +23,9 @@
           </div>
           <div class="flex flex-col items-start ml-2 mb-2 pr-2">
             <span class="my-2">{{ $t('hint.attachmentSelector') }}</span>
-            <el-select v-model="currentFieldId" size="large" class="flex-1" @change="onFieldListChange"
+            <el-select multiple v-model="currentFieldIds" size="large" class="flex-1" @change="onFieldListChange"
                        ref="attachmentSelector">
-              <el-option v-for="item in attachmentFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
+              <el-option v-for="item in attachmentFieldsMetaList" :key="item.id" :label="item.name" :value="item.id"/>
             </el-select>
           </div>
           <div class="flex flex-col items-start ml-2 mb-2 pr-2">
@@ -53,7 +53,8 @@
       <div class="flex flex-col w-full overflow-y-scroll overflow-x-hidden video-container mt-2"
            v-loading.fullscreen.lock="isLoading" v-if="currentCellVideoUrlList.length">
         <template v-for="(video, index) in currentCellVideoUrlList" v-if="!isLoading">
-          <video :src="video" autoplay controls :class="['mb-2 w-full cursor-pointer',index===currentCellVideoUrlList.length-1?'pb-20':'']" />
+          <video :src="video" autoplay controls
+                 :class="['mb-2 w-full cursor-pointer',index===currentCellVideoUrlList.length-1?'pb-20':'']"/>
         </template>
       </div>
       <div v-else
@@ -107,7 +108,7 @@ let onSelectionChangeHandler: any = null;
 const currentCellVideoUrlList = ref<Array<any>>([])
 const tableFieldMetaList = ref<Array<any>>([])
 const visibleRecordIdList = ref<Array<any>>([])
-const currentFieldId = ref<string>("")
+const currentFieldIds = ref<string[]>([])
 const currentRecordId = ref<string>("")
 const currentViewId = ref<string>("")
 const isLoading = ref(false)
@@ -141,7 +142,11 @@ const onSelectionChange = async (event: any) => {
   })
   if (hasPermission) {
     try {
-      const attachmentField = await table.getField<IAttachmentField>(currentFieldId.value);
+      const attachmentFields: Array<any> = new Array(currentFieldIds.value.length);
+      for (let i = 0; i < currentFieldIds.value.length; i++) {
+        attachmentFields[i] = await table.getField<IAttachmentField>(currentFieldIds.value[i])
+      }
+      console.log(attachmentFields)
       currentViewId.value = event?.data?.viewId ?? '';
       const view = await table.getViewById(currentViewId.value) as IGridView;
       let queryOptions: any = {
@@ -151,7 +156,6 @@ const onSelectionChange = async (event: any) => {
         queryOptions['pageToken'] = pageToken.value;
       }
       const recordIdListInfo = await view.getVisibleRecordIdListByPage(queryOptions)
-      console.log(recordIdListInfo)
       pageToken.value = recordIdListInfo.pageToken;
       visibleRecordIdList.value = recordIdListInfo.recordIds;
       const recordId = event?.data?.recordId ?? '';
@@ -160,7 +164,11 @@ const onSelectionChange = async (event: any) => {
         return;
       } else if (recordId) {
         lastRecordId.value = recordId;
-        currentCellVideoUrlList.value = await attachmentField.getAttachmentUrls(recordId);
+        let videoUrlLists: Array<any> = [];
+        for (let i = 0; i < attachmentFields.length; i++) {
+          videoUrlLists.push(await attachmentFields[i].getAttachmentUrls(recordId))
+        }
+        currentCellVideoUrlList.value = videoUrlLists;
         console.log(currentCellVideoUrlList.value)
         let tableV: any = {}
         for (let k of previewTextFieldList.value) {
@@ -224,10 +232,10 @@ const resetCache = async () => {
   tableVal.value = {}
   currentCellVideoUrlList.value = []
 }
-const attachmentFieldMetaList = computed(() => {
+const attachmentFieldsMetaList = computed(() => {
   const list = tableFieldMetaList.value.filter(obj => obj.type === 17);
   if (list.length) {
-    currentFieldId.value = list[0].id;
+    currentFieldIds.value = list[0].id;
   }
   return list;
 })
@@ -236,7 +244,7 @@ const othersFieldMetaList = computed(() => {
 })
 const descriptions = computed(() => previewTextFieldList.value.map(k => othersFieldMetaList.value.find(obj => obj.id == k)))
 const onFieldListChange = async (e: any) => {
-  currentFieldId.value = e;
+  currentFieldIds.value = e;
   // 刷新视图
   const table = await bitable.base.getActiveTable();
   const view = await table.getActiveView()
