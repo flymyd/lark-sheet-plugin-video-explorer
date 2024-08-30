@@ -96,7 +96,8 @@
 <script setup lang="ts">
 import {computed, onMounted, onUnmounted, reactive, ref} from "vue";
 import {bitable, IAttachmentField, IGridView} from "@lark-base-open/js-sdk";
-import {ElConfigProvider} from 'element-plus';
+import {base, PermissionEntity, OperationType} from '@lark-base-open/js-sdk';
+import {ElConfigProvider, ElMessage} from 'element-plus';
 import {useAppStore} from './store/modules/app'
 import {QuestionFilled, Refresh, ArrowLeftBold, ArrowRightBold, WarningFilled} from '@element-plus/icons-vue'
 import {useTheme} from './hooks/useTheme';
@@ -123,6 +124,7 @@ const carouselIndex = reactive({
 })
 const previewTextFieldList = ref<Array<any>>([])
 const tableVal = ref<any>({})
+const pageToken = ref(0);
 const changePage = async (next: boolean) => {
   const currentRecordIndex = visibleRecordIdList.value.findIndex(id => id === currentRecordId.value);
   const table = await bitable.base.getActiveTable();
@@ -139,40 +141,63 @@ const changePage = async (next: boolean) => {
 const onSelectionChange = async (event: any) => {
   const table = await bitable.base.getActiveTable();
   isLoading.value = true;
-  try {
-    const attachmentField = await table.getField<IAttachmentField>(currentFieldId.value);
-    currentViewId.value = event?.data?.viewId ?? '';
-    const view = await table.getViewById(currentViewId.value) as IGridView;
-    visibleRecordIdList.value = await view.getVisibleRecordIdList();
-    const recordId = event?.data?.recordId ?? '';
-    currentRecordId.value = recordId;
-    if (lastRecordId.value == recordId && !event?.data?.refresh) {
-      return;
-    } else if (recordId) {
-      lastRecordId.value = recordId;
-      currentCellPicUrlList.value = await attachmentField.getAttachmentUrls(recordId);
-      let tableV: any = {}
-      for (let k of previewTextFieldList.value) {
-        await Object.defineProperty(tableV, k, {
-          value: await table.getCellString(k, recordId),
-          writable: true,
-          enumerable: true,
-          configurable: true
-        });
+  const hasPermission = await base.getPermission({
+    entity: PermissionEntity.Base,
+    type: OperationType.Printable
+  })
+  if (hasPermission) {
+    try {
+      const attachmentField = await table.getField<IAttachmentField>(currentFieldId.value);
+      currentViewId.value = event?.data?.viewId ?? '';
+      const view = await table.getViewById(currentViewId.value) as IGridView;
+      let queryOptions: any = {
+        pageSize: 200
       }
-      tableVal.value = tableV;
-      isLoading.value = false;
-    } else {
-      lastRecordId.value = recordId;
+      if (pageToken.value !== 0) {
+        queryOptions['pageToken'] = pageToken.value;
+      }
+      const recordIdListInfo = await view.getVisibleRecordIdListByPage(queryOptions)
+      console.log(recordIdListInfo)
+      pageToken.value = recordIdListInfo.pageToken;
+      visibleRecordIdList.value = recordIdListInfo.recordIds;
+      const recordId = event?.data?.recordId ?? '';
+      currentRecordId.value = recordId;
+      if (lastRecordId.value == recordId && !event?.data?.refresh) {
+        return;
+      } else if (recordId) {
+        lastRecordId.value = recordId;
+        currentCellPicUrlList.value = await attachmentField.getAttachmentUrls(recordId);
+        console.log(currentCellPicUrlList.value)
+        let tableV: any = {}
+        for (let k of previewTextFieldList.value) {
+          await Object.defineProperty(tableV, k, {
+            value: await table.getCellString(k, recordId),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+        tableVal.value = tableV;
+        isLoading.value = false;
+      } else {
+        lastRecordId.value = recordId;
+        currentCellPicUrlList.value = []
+        tableVal.value = null;
+        isLoading.value = false;
+      }
+    } catch (e) {
       currentCellPicUrlList.value = []
       tableVal.value = null;
       isLoading.value = false;
+    } finally {
+      carouselIndex.newVal = 0;
+      carouselIndex.oldVal = 0;
     }
-  } catch (e) {
+  } else {
+    ElMessage.error('你没有权限访问此附件！')
     currentCellPicUrlList.value = []
     tableVal.value = null;
     isLoading.value = false;
-  } finally {
     carouselIndex.newVal = 0;
     carouselIndex.oldVal = 0;
   }
