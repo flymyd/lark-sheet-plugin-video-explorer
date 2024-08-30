@@ -9,7 +9,7 @@ export default {
     help: 'How to use',
     prev: 'Prev',
     next: 'Next',
-    reset: 'Reset',
+    reset: 'Locate',
     scrollToBrowse: 'Scroll to browse video',
     previewFieldConfig: 'Preview Column Configuration',
     previewFieldContent: 'Preview Content'

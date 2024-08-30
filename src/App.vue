@@ -14,12 +14,12 @@
                 </el-button>
               </template>
             </el-popover>
-            <el-button class="m-2" @click="resetCache" ref="reset">
-              <el-icon class="mr-1">
-                <Refresh/>
-              </el-icon>
-              {{ $t('hint.reset') }}
-            </el-button>
+<!--            <el-button class="m-2" @click="resetCache" ref="reset">-->
+<!--              <el-icon class="mr-1">-->
+<!--                <Refresh/>-->
+<!--              </el-icon>-->
+<!--              {{ $t('hint.reset') }}-->
+<!--            </el-button>-->
           </div>
           <div class="flex flex-col items-start ml-2 mb-2 pr-2">
             <span class="my-2">{{ $t('hint.attachmentSelector') }}</span>
@@ -101,7 +101,8 @@
                          :label="item.name"
                          :value="item.id"/>
             </el-select>
-            <el-select v-else-if="item.type===4 && tableValEdit[item.id]" multiple v-model="tableValEdit[item.id]['val']"
+            <el-select v-else-if="item.type===4 && tableValEdit[item.id]" multiple
+                       v-model="tableValEdit[item.id]['val']"
                        clearable
                        @clear="(e)=>onSelectChange(e, item, true)"
                        @change="(e)=>onSelectChange(e, item, true)">
@@ -133,14 +134,13 @@
 </template>
 <script setup lang="ts">
 import {computed, onMounted, onUnmounted, reactive, ref, watch} from "vue";
-import {bitable, IAttachmentField, IGridView, ITextField, IMultiSelectField} from "@lark-base-open/js-sdk";
+import {bitable, IAttachmentField, IGridView} from "@lark-base-open/js-sdk";
 import {base, PermissionEntity, OperationType} from '@lark-base-open/js-sdk';
-import {ElConfigProvider, ElMessage} from 'element-plus';
+import {ElConfigProvider, ElMessage, ElMessageBox} from 'element-plus';
 import {useAppStore} from './store/modules/app'
 import {QuestionFilled, Refresh, ArrowLeftBold, ArrowRightBold, WarningFilled} from '@element-plus/icons-vue'
 import {useTheme} from './hooks/useTheme';
 
-const modelCache = ref<any>({})
 const prevAndNext = ref<any>(null);
 const attachmentSelector = ref<any>(null);
 const textSelector = ref<any>(null);
@@ -167,7 +167,7 @@ const editTextFieldList = ref<Array<any>>([])
 const tableVal = ref<any>({})
 const tableValEdit = ref<any>({})
 const pageToken = ref(0);
-const currentRecordIndex = ref('');
+const currentRecordIndex = ref<any>(-1);
 const changePage = async (next: boolean) => {
   const currentRecordIndexT = visibleRecordIdList.value.findIndex(id => id === currentRecordId.value);
   const table = await bitable.base.getActiveTable();
@@ -182,7 +182,10 @@ const changePage = async (next: boolean) => {
   await onSelectionChange({data: {viewId, recordId: toRecordId, refresh: true}})
 }
 const onSelectionChange = async (event: any) => {
-  const currentRecordIndexT = visibleRecordIdList.value.findIndex(id => id === event.data.recordId);
+  let currentRecordIndexT;
+  if (event?.data?.resetNo ?? 0) {
+    currentRecordIndexT = event.data.resetNo
+  } else currentRecordIndexT = visibleRecordIdList.value.findIndex(id => id === event.data.recordId);
   const table = await bitable.base.getActiveTable();
   isLoading.value = true;
   const hasPermission = await base.getPermission({
@@ -202,27 +205,33 @@ const onSelectionChange = async (event: any) => {
       } else if (currentRecordIndexT <= visibleRecordIdList.value.length) {
         pageToken.value = currentRecordIndexT
       } else {
-        pageToken.value = 0;
-        ElMessage.warning("请重置行号")
+        pageToken.value = currentRecordIndexT
+        // ElMessage.warning("请重置行号")
       }
       let queryOptions: any = {
         pageSize: 200,
-        pageToken: pageToken.value
+        pageToken: Number(pageToken.value)
       }
       const recordIdListInfo = await view.getVisibleRecordIdListByPage(queryOptions)
       const arrSet = new Set([...visibleRecordIdList.value, ...recordIdListInfo.recordIds])
       visibleRecordIdList.value = Array.from(arrSet);
+      console.log(visibleRecordIdList.value)
       const recordId = event?.data?.recordId ?? '';
       currentRecordId.value = recordId;
-      currentRecordIndex.value = visibleRecordIdList.value.findIndex(id => id === currentRecordId.value)
-      if (lastRecordId.value == recordId && !event?.data?.refresh) {
+      if (event?.data?.resetNo ?? 0) {
+        currentRecordIndex.value = Number(event.data.resetNo)
+        currentRecordId.value = recordIdListInfo.recordIds[0]
+      } else {
+        currentRecordIndex.value = visibleRecordIdList.value.findIndex(id => id === currentRecordId.value);
+      }
+      if (lastRecordId.value == currentRecordId.value && !event?.data?.refresh) {
         return;
-      } else if (recordId) {
-        lastRecordId.value = recordId;
+      } else if (currentRecordId.value) {
+        lastRecordId.value = currentRecordId.value;
         let tableV: any = {}
         for (let k of previewTextFieldList.value) {
           await Object.defineProperty(tableV, k, {
-            value: await table.getCellString(k, recordId),
+            value: await table.getCellString(k, currentRecordId.value),
             writable: true,
             enumerable: true,
             configurable: true
@@ -231,7 +240,7 @@ const onSelectionChange = async (event: any) => {
         tableVal.value = tableV;
         let tableVEdit: any = {}
         for (let k of editTextFieldList.value) {
-          const originVal = await table.getCellValue(k, recordId);
+          const originVal = await table.getCellValue(k, currentRecordId.value);
           const field = await table.getFieldMetaById(k);
           let val: any;
           if (field.type === 1) {
@@ -249,7 +258,7 @@ const onSelectionChange = async (event: any) => {
           }
           await Object.defineProperty(tableVEdit, k, {
             value: {
-              recordId,
+              recordId: currentRecordId.value,
               val,
               field
             },
@@ -290,9 +299,6 @@ const onSelectionChange = async (event: any) => {
     carouselIndex.oldVal = 0;
   }
 }
-watch(currentRecordIndex, newVal => {
-  console.log(newVal)
-})
 const defaultTextFieldSet = ref<Array<any>>([])
 const defaultEditTextFieldSet = ref<Array<any>>([])
 onMounted(async () => {
@@ -324,12 +330,21 @@ onMounted(async () => {
   }
 })
 const resetCache = async () => {
-  previewTextFieldList.value = defaultTextFieldSet.value
-  editTextFieldList.value = defaultEditTextFieldSet.value
-  await onPreviewChange(defaultTextFieldSet.value)
-  await onEditChange(defaultEditTextFieldSet.value)
-  tableVal.value = {}
-  currentCellVideoUrlList.value = []
+  // previewTextFieldList.value = defaultTextFieldSet.value
+  // editTextFieldList.value = defaultEditTextFieldSet.value
+  // await onPreviewChange(defaultTextFieldSet.value)
+  // await onEditChange(defaultEditTextFieldSet.value)
+  // tableVal.value = {}
+  // currentCellVideoUrlList.value = []
+  const table = await bitable.base.getActiveTable();
+  const view = await table.getActiveView()
+  const viewId = view.id;
+  ElMessageBox.prompt('请输入当前行号', '定位', {
+    inputPattern: /^\d+$/,
+    inputErrorMessage: '请输入正整数',
+  }).then(({value}) => {
+    onSelectionChange({data: {viewId, refresh: true, resetNo: Number(value)}})
+  })
 }
 const attachmentFieldsMetaList = computed(() => {
   const list = tableFieldMetaList.value.filter(obj => obj.type === 17);
