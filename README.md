@@ -12,4 +12,6 @@ npm i
 npm run build
 ```
 
-并部署dist至已配置HTTPS的站点下即可。
+并部署dist至已配置HTTPS的站点下即可。  
+
+TODO 默认选择单列时有bug；视频上添加列头；添加编辑功能；谈归属权

@@ -50,11 +50,11 @@
           </div>
         </el-collapse-item>
       </el-collapse>
-      <div class="flex flex-col w-full overflow-y-scroll overflow-x-hidden video-container mt-2"
+      <div class="flex flex-row w-full overflow-y-scroll overflow-x-hidden video-container mt-2"
            v-loading.fullscreen.lock="isLoading" v-if="currentCellVideoUrlList.length">
-        <template v-for="(video, index) in currentCellVideoUrlList" v-if="!isLoading">
+        <template v-for="video in currentCellVideoUrlList" v-if="!isLoading">
           <video :src="video" autoplay controls
-                 :class="['mb-2 w-full cursor-pointer',index===currentCellVideoUrlList.length-1?'pb-20':'']"/>
+                 class="mb-2 flex-1 cursor-pointer" :style="{ width: `calc((100% - 20px * (${currentCellVideoUrlList.length} - 1)) / ${currentCellVideoUrlList.length})`, height: '50vh', objectFit: 'contain', background: '#000' }"/>
         </template>
       </div>
       <div v-else
@@ -274,6 +274,13 @@ const switchLang = (command: string) => {
 
 :deep(.is-animating) {
   transition: none;
+}
+
+.video-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 .video-container::-webkit-scrollbar {
