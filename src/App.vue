@@ -40,9 +40,25 @@
               <el-option v-for="item in othersFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
             </el-select>
           </div>
+          <div class="flex flex-col items-start ml-2 mb-2 pr-2">
+            <span class="my-2">{{ $t('hint.editSelector') }}</span>
+            <el-select v-model="editTextFieldList"
+                       multiple @change="onEditChange"
+                       collapse-tags
+                       collapse-tags-tooltip
+                       :max-collapse-tags="3"
+                       :multiple-limit="4"
+                       class="flex-1" ref="editSelector">
+              <el-option v-for="item in othersFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
+            </el-select>
+          </div>
         </el-collapse-item>
         <el-collapse-item :title="$t('hint.previewFieldContent')" name="2" v-if="previewTextFieldList.length">
           <div class="mt-2 text-sm">
+            <div class="flex flex-row ml-2 mb-2 pr-2" v-if="currentRecordIndex!==-1">
+              <span>行号：</span>
+              <span>{{ currentRecordIndex + 1 }}</span>
+            </div>
             <div class="flex flex-row ml-2 mb-2 pr-2" v-for="item in descriptions">
               <span>{{ item.name ? item.name : '-' }}：</span>
               <span>{{ tableVal ? tableVal[item.id] || '-' : '-' }}</span>
@@ -52,10 +68,14 @@
       </el-collapse>
       <div class="flex flex-row w-full overflow-y-scroll overflow-x-hidden video-container mt-2"
            v-loading.fullscreen.lock="isLoading" v-if="currentCellVideoUrlList.length">
-        <template v-for="video in currentCellVideoUrlList" v-if="!isLoading">
-          <video :src="video" autoplay controls
-                 class="mb-2 flex-1 cursor-pointer" :style="{ width: `calc((100% - 20px * (${currentCellVideoUrlList.length} - 1)) / ${currentCellVideoUrlList.length})`, height: '50vh', objectFit: 'contain', background: '#000' }"/>
-        </template>
+        <div v-for="(video, i) in currentCellVideoUrlList" v-if="!isLoading"
+             class="flex flex-col w-full mb-2 flex-1"
+             :style="{ width: `calc((100% - 20px * (${currentCellVideoUrlList.length} - 1)) / ${currentCellVideoUrlList.length})` }"
+        >
+          <span class="text-center mb-2">{{ currentFieldIdsName[i] }}</span>
+          <video :src="video" autoplay controls class="cursor-pointer"
+                 :style="{height: '50vh', objectFit: 'contain', background: '#000'}"/>
+        </div>
       </div>
       <div v-else
            class="m-2 min-h-56 flex flex-row justify-center items-center text-[#8d8d8d] text-lg select-none"
@@ -68,6 +88,30 @@
           <WarningFilled/>
         </el-icon>
         {{ $t('hint.noVideo') }}
+      </div>
+      <div v-if="currentRecordIndex!==-1" class="mb-24">
+        <div class="mt-2 text-sm">
+          <div class="flex flex-row ml-2 mb-2 pr-2 items-center" v-for="item in descriptionsEdit">
+            <span>{{ item.name ? item.name : '-' }}：</span>
+            <el-input v-if="item.type===1" v-model="tableValEdit[item.id]['val']"
+                      @input="(e)=>onInputChange(e, item)"/>
+            <el-select v-else-if="item.type===3" v-model="tableValEdit[item.id]['val']"
+                       @change="(e)=>onSelectChange(e, item)">
+              <el-option v-for="item in tableValEdit[item.id]['field']['property']['options']" :key="item.id"
+                         :label="item.name"
+                         :value="item.id"/>
+            </el-select>
+            <el-select v-else-if="item.type===4" multiple v-model="tableValEdit[item.id]['val']"
+                       clearable
+                       @clear="(e)=>onSelectChange(e, item, true)"
+                       @change="(e)=>onSelectChange(e, item, true)">
+              <el-option v-for="item in tableValEdit[item.id]['field']['property']['options']" :key="item.id"
+                         :label="item.name"
+                         :value="item.id"/>
+            </el-select>
+            <span v-else>{{tableValEdit[item.id]['val']}}</span>
+          </div>
+        </div>
       </div>
       <div class="flex flex-row justify-center w-full bottom-12 fixed">
         <el-button-group ref="prevAndNext">
@@ -90,16 +134,18 @@
 </template>
 <script setup lang="ts">
 import {computed, onMounted, onUnmounted, reactive, ref} from "vue";
-import {bitable, IAttachmentField, IGridView} from "@lark-base-open/js-sdk";
+import {bitable, IAttachmentField, IGridView, ITextField, IMultiSelectField} from "@lark-base-open/js-sdk";
 import {base, PermissionEntity, OperationType} from '@lark-base-open/js-sdk';
 import {ElConfigProvider, ElMessage} from 'element-plus';
 import {useAppStore} from './store/modules/app'
 import {QuestionFilled, Refresh, ArrowLeftBold, ArrowRightBold, WarningFilled} from '@element-plus/icons-vue'
 import {useTheme} from './hooks/useTheme';
 
+const modelCache = ref<any>({})
 const prevAndNext = ref<any>(null);
 const attachmentSelector = ref<any>(null);
 const textSelector = ref<any>(null);
+const editSelector = ref<any>(null);
 const activeNames = ref(['1', '2'])
 
 const appStore = useAppStore()
@@ -118,8 +164,11 @@ const carouselIndex = reactive({
   oldVal: 0
 })
 const previewTextFieldList = ref<Array<any>>([])
+const editTextFieldList = ref<Array<any>>([])
 const tableVal = ref<any>({})
+const tableValEdit = ref<any>({})
 const pageToken = ref(0);
+const currentRecordIndex = ref(-1);
 const changePage = async (next: boolean) => {
   const currentRecordIndex = visibleRecordIdList.value.findIndex(id => id === currentRecordId.value);
   const table = await bitable.base.getActiveTable();
@@ -146,7 +195,6 @@ const onSelectionChange = async (event: any) => {
       for (let i = 0; i < currentFieldIds.value.length; i++) {
         attachmentFields[i] = await table.getField<IAttachmentField>(currentFieldIds.value[i])
       }
-      console.log(attachmentFields)
       currentViewId.value = event?.data?.viewId ?? '';
       const view = await table.getViewById(currentViewId.value) as IGridView;
       let queryOptions: any = {
@@ -160,6 +208,7 @@ const onSelectionChange = async (event: any) => {
       visibleRecordIdList.value = recordIdListInfo.recordIds;
       const recordId = event?.data?.recordId ?? '';
       currentRecordId.value = recordId;
+      currentRecordIndex.value = visibleRecordIdList.value.findIndex(id => id === currentRecordId.value)
       if (lastRecordId.value == recordId && !event?.data?.refresh) {
         return;
       } else if (recordId) {
@@ -169,7 +218,6 @@ const onSelectionChange = async (event: any) => {
           videoUrlLists.push(await attachmentFields[i].getAttachmentUrls(recordId))
         }
         currentCellVideoUrlList.value = videoUrlLists;
-        console.log(currentCellVideoUrlList.value)
         let tableV: any = {}
         for (let k of previewTextFieldList.value) {
           await Object.defineProperty(tableV, k, {
@@ -180,6 +228,36 @@ const onSelectionChange = async (event: any) => {
           });
         }
         tableVal.value = tableV;
+        let tableVEdit: any = {}
+        for (let k of editTextFieldList.value) {
+          const originVal = await table.getCellValue(k, recordId);
+          const field = await table.getFieldMetaById(k);
+          let val: any;
+          if (field.type === 1) {
+            if (originVal) {
+              val = originVal.map(o => o.text).join("")
+            } else val = ''
+          } else if (field.type === 3) {
+            if (originVal) {
+              val = originVal.id
+            } else val = ''
+          } else if (field.type === 4) {
+            if (originVal) {
+              val = originVal.map(o => o.id)
+            } else val = []
+          }
+          await Object.defineProperty(tableVEdit, k, {
+            value: {
+              recordId,
+              val,
+              field
+            },
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+        tableValEdit.value = tableVEdit;
         isLoading.value = false;
       } else {
         lastRecordId.value = recordId;
@@ -205,12 +283,11 @@ const onSelectionChange = async (event: any) => {
   }
 }
 const defaultTextFieldSet = ref<Array<any>>([])
-const openTour = ref(false)
+const defaultEditTextFieldSet = ref<Array<any>>([])
 onMounted(async () => {
   await bitable.bridge.getLanguage().then((lang) => {
     switchLang(lang)
   })
-  openTour.value = true;
   const table = await bitable.base.getActiveTable();
   onSelectionChangeHandler = bitable.base.onSelectionChange(onSelectionChange)
   // 获取列的列表
@@ -225,17 +302,28 @@ onMounted(async () => {
   if (primary.length && !appStore.previewTextFields.length) {
     await onPreviewChange([primary[0].id])
   }
+  editTextFieldList.value = tableFieldMetaList
+      .value.map(obj => obj.id)
+      .filter((value: any) => appStore.editTextFields.includes(value));
+  if (primary.length) {
+    defaultEditTextFieldSet.value = [primary[0].id];
+  }
+  if (primary.length && !appStore.editTextFields.length) {
+    await onEditChange([primary[0].id])
+  }
 })
 const resetCache = async () => {
   previewTextFieldList.value = defaultTextFieldSet.value
+  editTextFieldList.value = defaultEditTextFieldSet.value
   await onPreviewChange(defaultTextFieldSet.value)
+  await onEditChange(defaultEditTextFieldSet.value)
   tableVal.value = {}
   currentCellVideoUrlList.value = []
 }
 const attachmentFieldsMetaList = computed(() => {
   const list = tableFieldMetaList.value.filter(obj => obj.type === 17);
   if (list.length) {
-    currentFieldIds.value = list[0].id;
+    currentFieldIds.value = [list[0].id];
   }
   return list;
 })
@@ -243,8 +331,14 @@ const othersFieldMetaList = computed(() => {
   return tableFieldMetaList.value.filter(obj => obj.type !== 17);
 })
 const descriptions = computed(() => previewTextFieldList.value.map(k => othersFieldMetaList.value.find(obj => obj.id == k)))
+const descriptionsEdit = computed(() => editTextFieldList.value.map(k => othersFieldMetaList.value.find(obj => obj.id == k)))
+const currentFieldIdsName = ref<any>([]);
 const onFieldListChange = async (e: any) => {
   currentFieldIds.value = e;
+  currentFieldIdsName.value = currentFieldIds.value.map((k: any) => {
+    const res = attachmentFieldsMetaList.value.filter(o => o.id == k);
+    return res[0].name
+  })
   // 刷新视图
   const table = await bitable.base.getActiveTable();
   const view = await table.getActiveView()
@@ -258,6 +352,13 @@ const onPreviewChange = async (e: any) => {
   const viewId = view.id;
   await onSelectionChange({data: {viewId, recordId: lastRecordId.value, refresh: true}})
 }
+const onEditChange = async (e: any) => {
+  appStore.changeEditTextFields(e);
+  const table = await bitable.base.getActiveTable();
+  const view = await table.getActiveView()
+  const viewId = view.id;
+  await onSelectionChange({data: {viewId, recordId: lastRecordId.value, refresh: true}})
+}
 onUnmounted(() => {
   if (onSelectionChangeHandler) {
     onSelectionChangeHandler = null;
@@ -266,6 +367,22 @@ onUnmounted(() => {
 const switchLang = (command: string) => {
   appStore.changeLanguage(command)
 }
+const onInputChange = async (e: any, item: any) => {
+  const table = await bitable.base.getActiveTable();
+  const recordDetail = tableValEdit.value[item.id];
+  await table.setCellValue(item.id, recordDetail.recordId, e)
+}
+const onSelectChange = async (e: any, item: any, multiple: boolean = false) => {
+  const table = await bitable.base.getActiveTable();
+  const selectField = await table.getField<any>(item.id);
+  const recordDetail = tableValEdit.value[item.id];
+  if (!e && multiple) {
+    await selectField.setValue(recordDetail.recordId, [])
+  } else {
+    await selectField.setValue(recordDetail.recordId, e)
+  }
+}
+
 </script>
 <style scoped>
 :deep(.is-active) {

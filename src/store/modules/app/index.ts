@@ -11,6 +11,7 @@ export const useAppStore = defineStore('app', () => {
   const {locale: i18n} = useI18n()
   const language = useStorage('language', 'en');
   const previewTextFields: any = useStorage('textFields', []);
+  const editTextFields: any = useStorage('editTextFields', []);
   i18n.value = language.value;
   const locale = computed(() => {
     if (language?.value == 'zh') {
@@ -30,12 +31,17 @@ export const useAppStore = defineStore('app', () => {
   function changePreviewTextFields(val: any) {
     previewTextFields.value = val;
   }
+  function changeEditTextFields(val: any) {
+    editTextFields.value = val;
+  }
 
   return {
     language,
     locale,
     changeLanguage,
     previewTextFields,
-    changePreviewTextFields
+    editTextFields,
+    changePreviewTextFields,
+    changeEditTextFields,
   };
 });
