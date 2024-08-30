@@ -73,8 +73,8 @@
              :style="{ width: `calc((100% - 20px * (${currentCellVideoUrlList.length} - 1)) / ${currentCellVideoUrlList.length})` }"
         >
           <span class="text-center mb-2">{{ currentFieldIdsName[i] }}</span>
-          <!--          <video :src="video" autoplay controls class="cursor-pointer"-->
-          <!--                 :style="{height: '50vh', objectFit: 'contain', background: '#000'}"/>-->
+          <video :src="video" autoplay controls class="cursor-pointer"
+                 :style="{height: '50vh', objectFit: 'contain', background: '#000'}"/>
         </div>
       </div>
       <div v-else
@@ -93,15 +93,15 @@
         <div class="mt-2 text-sm">
           <div class="flex flex-row ml-2 mb-2 pr-2 items-center" v-for="item in descriptionsEdit">
             <span>{{ item.name ? item.name : '-' }}：</span>
-            <el-input v-if="item.type===1" v-model="tableValEdit[item.id]['val']"
+            <el-input v-if="item.type===1 && tableValEdit[item.id]" v-model="tableValEdit[item.id]['val']"
                       @input="(e)=>onInputChange(e, item)"/>
-            <el-select v-else-if="item.type===3" v-model="tableValEdit[item.id]['val']"
+            <el-select v-else-if="item.type===3 && tableValEdit[item.id]" v-model="tableValEdit[item.id]['val']"
                        @change="(e)=>onSelectChange(e, item)">
               <el-option v-for="item in tableValEdit[item.id]['field']['property']['options']" :key="item.id"
                          :label="item.name"
                          :value="item.id"/>
             </el-select>
-            <el-select v-else-if="item.type===4" multiple v-model="tableValEdit[item.id]['val']"
+            <el-select v-else-if="item.type===4 && tableValEdit[item.id]" multiple v-model="tableValEdit[item.id]['val']"
                        clearable
                        @clear="(e)=>onSelectChange(e, item, true)"
                        @change="(e)=>onSelectChange(e, item, true)">
@@ -219,12 +219,6 @@ const onSelectionChange = async (event: any) => {
         return;
       } else if (recordId) {
         lastRecordId.value = recordId;
-        let videoUrlLists: Array<any> = [];
-        for (let i = 0; i < attachmentFields.length; i++) {
-          const url = await attachmentFields[i].getAttachmentUrls(recordId);
-          videoUrlLists.push(url)
-        }
-        currentCellVideoUrlList.value = videoUrlLists;
         let tableV: any = {}
         for (let k of previewTextFieldList.value) {
           await Object.defineProperty(tableV, k, {
@@ -265,6 +259,12 @@ const onSelectionChange = async (event: any) => {
           });
         }
         tableValEdit.value = tableVEdit;
+        let videoUrlLists: Array<any> = [];
+        for (let i = 0; i < attachmentFields.length; i++) {
+          const url = await attachmentFields[i].getAttachmentUrls(recordId);
+          videoUrlLists.push(url)
+        }
+        currentCellVideoUrlList.value = videoUrlLists;
         isLoading.value = false;
       } else {
         lastRecordId.value = recordId;
@@ -273,6 +273,7 @@ const onSelectionChange = async (event: any) => {
         isLoading.value = false;
       }
     } catch (e) {
+      console.log(e)
       currentCellVideoUrlList.value = []
       tableVal.value = null;
       isLoading.value = false;
