@@ -50,16 +50,10 @@
           </div>
         </el-collapse-item>
       </el-collapse>
-      <el-image-viewer
-          v-if="imageViewer"
-          :initial-index="previewIndex"
-          @close="()=>{imageViewer=false}"
-          :url-list="currentCellPicUrlList"/>
-      <div class="flex flex-col w-full overflow-y-scroll overflow-x-hidden pic-container mt-2"
-           v-loading.fullscreen.lock="isLoading" v-if="currentCellPicUrlList.length">
-        <template v-for="(pic, index) in currentCellPicUrlList" v-if="!isLoading">
-          <img :src="pic" :class="['mb-2 w-full cursor-pointer',index===currentCellPicUrlList.length-1?'pb-20':'']"
-               @click="showPic(index)"/>
+      <div class="flex flex-col w-full overflow-y-scroll overflow-x-hidden video-container mt-2"
+           v-loading.fullscreen.lock="isLoading" v-if="currentCellVideoUrlList.length">
+        <template v-for="(video, index) in currentCellVideoUrlList" v-if="!isLoading">
+          <video :src="video" autoplay controls :class="['mb-2 w-full cursor-pointer',index===currentCellVideoUrlList.length-1?'pb-20':'']" />
         </template>
       </div>
       <div v-else
@@ -72,7 +66,7 @@
         <el-icon class="mr-1">
           <WarningFilled/>
         </el-icon>
-        {{ $t('hint.noPicture') }}
+        {{ $t('hint.noVideo') }}
       </div>
       <div class="flex flex-row justify-center w-full bottom-12 fixed">
         <el-button-group ref="prevAndNext">
@@ -110,7 +104,7 @@ const activeNames = ref(['1', '2'])
 const appStore = useAppStore()
 const {theme: currentTheme} = useTheme();
 let onSelectionChangeHandler: any = null;
-const currentCellPicUrlList = ref<Array<any>>([])
+const currentCellVideoUrlList = ref<Array<any>>([])
 const tableFieldMetaList = ref<Array<any>>([])
 const visibleRecordIdList = ref<Array<any>>([])
 const currentFieldId = ref<string>("")
@@ -166,8 +160,8 @@ const onSelectionChange = async (event: any) => {
         return;
       } else if (recordId) {
         lastRecordId.value = recordId;
-        currentCellPicUrlList.value = await attachmentField.getAttachmentUrls(recordId);
-        console.log(currentCellPicUrlList.value)
+        currentCellVideoUrlList.value = await attachmentField.getAttachmentUrls(recordId);
+        console.log(currentCellVideoUrlList.value)
         let tableV: any = {}
         for (let k of previewTextFieldList.value) {
           await Object.defineProperty(tableV, k, {
@@ -181,12 +175,12 @@ const onSelectionChange = async (event: any) => {
         isLoading.value = false;
       } else {
         lastRecordId.value = recordId;
-        currentCellPicUrlList.value = []
+        currentCellVideoUrlList.value = []
         tableVal.value = null;
         isLoading.value = false;
       }
     } catch (e) {
-      currentCellPicUrlList.value = []
+      currentCellVideoUrlList.value = []
       tableVal.value = null;
       isLoading.value = false;
     } finally {
@@ -195,7 +189,7 @@ const onSelectionChange = async (event: any) => {
     }
   } else {
     ElMessage.error('你没有权限访问此附件！')
-    currentCellPicUrlList.value = []
+    currentCellVideoUrlList.value = []
     tableVal.value = null;
     isLoading.value = false;
     carouselIndex.newVal = 0;
@@ -228,7 +222,7 @@ const resetCache = async () => {
   previewTextFieldList.value = defaultTextFieldSet.value
   await onPreviewChange(defaultTextFieldSet.value)
   tableVal.value = {}
-  currentCellPicUrlList.value = []
+  currentCellVideoUrlList.value = []
 }
 const attachmentFieldMetaList = computed(() => {
   const list = tableFieldMetaList.value.filter(obj => obj.type === 17);
@@ -264,12 +258,6 @@ onUnmounted(() => {
 const switchLang = (command: string) => {
   appStore.changeLanguage(command)
 }
-const imageViewer = ref(false)
-const previewIndex = ref(0)
-const showPic = (index: number) => {
-  previewIndex.value = index;
-  imageViewer.value = true
-}
 </script>
 <style scoped>
 :deep(.is-active) {
@@ -280,15 +268,15 @@ const showPic = (index: number) => {
   transition: none;
 }
 
-.pic-container::-webkit-scrollbar {
+.video-container::-webkit-scrollbar {
   width: 8px;
 }
 
-.pic-container::-webkit-scrollbar-track {
+.video-container::-webkit-scrollbar-track {
   background: #f8f8f8;
 }
 
-.pic-container::-webkit-scrollbar-thumb {
+.video-container::-webkit-scrollbar-thumb {
   background: #b0b0b0;
   border-radius: 12px;
 }

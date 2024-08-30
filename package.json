@@ -1,7 +1,7 @@
 {
-  "name": "lark-sheet-plugin-gallery-explorer",
+  "name": "lark-sheet-plugin-video-explorer",
   "author": "flymyd@foxmail.com",
-  "version": "1.0.2",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
