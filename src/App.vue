@@ -53,13 +53,13 @@
             </el-select>
           </div>
         </el-collapse-item>
-        <el-collapse-item :title="$t('hint.previewFieldContent')" name="2" v-if="previewTextFieldList.length">
+        <el-collapse-item :title="$t('hint.previewFieldContent')" name="2">
           <div class="mt-2 text-sm">
-            <div class="flex flex-row ml-2 mb-2 pr-2" v-if="currentRecordIndex!==-1">
+            <div class="flex flex-row ml-2 mb-2 pr-2">
               <span>行号：</span>
-              <span>{{ currentRecordIndex + 1 }}</span>
+              <span>{{ getCurrentRecordIndexFormat }}</span>
             </div>
-            <div class="flex flex-row ml-2 mb-2 pr-2" v-for="item in descriptions">
+            <div class="flex flex-row ml-2 mb-2 pr-2" v-for="item in descriptions" v-if="previewTextFieldList.length">
               <span>{{ item.name ? item.name : '-' }}：</span>
               <span>{{ tableVal ? tableVal[item.id] || '-' : '-' }}</span>
             </div>
@@ -73,8 +73,8 @@
              :style="{ width: `calc((100% - 20px * (${currentCellVideoUrlList.length} - 1)) / ${currentCellVideoUrlList.length})` }"
         >
           <span class="text-center mb-2">{{ currentFieldIdsName[i] }}</span>
-          <video :src="video" autoplay controls class="cursor-pointer"
-                 :style="{height: '50vh', objectFit: 'contain', background: '#000'}"/>
+          <!--          <video :src="video" autoplay controls class="cursor-pointer"-->
+          <!--                 :style="{height: '50vh', objectFit: 'contain', background: '#000'}"/>-->
         </div>
       </div>
       <div v-else
@@ -109,11 +109,10 @@
                          :label="item.name"
                          :value="item.id"/>
             </el-select>
-            <span v-else>{{tableValEdit[item.id]['val']}}</span>
           </div>
         </div>
       </div>
-      <div class="flex flex-row justify-center w-full bottom-12 fixed">
+      <div class="flex flex-row justify-center w-full bottom-8 fixed">
         <el-button-group ref="prevAndNext">
           <el-button type="warning" @click="changePage(false)">
             <el-icon>
@@ -133,7 +132,7 @@
   </el-config-provider>
 </template>
 <script setup lang="ts">
-import {computed, onMounted, onUnmounted, reactive, ref} from "vue";
+import {computed, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {bitable, IAttachmentField, IGridView, ITextField, IMultiSelectField} from "@lark-base-open/js-sdk";
 import {base, PermissionEntity, OperationType} from '@lark-base-open/js-sdk';
 import {ElConfigProvider, ElMessage} from 'element-plus';
@@ -168,21 +167,22 @@ const editTextFieldList = ref<Array<any>>([])
 const tableVal = ref<any>({})
 const tableValEdit = ref<any>({})
 const pageToken = ref(0);
-const currentRecordIndex = ref(-1);
+const currentRecordIndex = ref('');
 const changePage = async (next: boolean) => {
-  const currentRecordIndex = visibleRecordIdList.value.findIndex(id => id === currentRecordId.value);
+  const currentRecordIndexT = visibleRecordIdList.value.findIndex(id => id === currentRecordId.value);
   const table = await bitable.base.getActiveTable();
   const view = await table.getActiveView()
   const viewId = view.id;
   let toRecordId;
   if (next) {
-    toRecordId = visibleRecordIdList.value[currentRecordIndex + 1];
+    toRecordId = visibleRecordIdList.value[currentRecordIndexT + 1];
   } else {
-    toRecordId = visibleRecordIdList.value[currentRecordIndex - 1];
+    toRecordId = visibleRecordIdList.value[currentRecordIndexT - 1];
   }
   await onSelectionChange({data: {viewId, recordId: toRecordId, refresh: true}})
 }
 const onSelectionChange = async (event: any) => {
+  const currentRecordIndexT = visibleRecordIdList.value.findIndex(id => id === event.data.recordId);
   const table = await bitable.base.getActiveTable();
   isLoading.value = true;
   const hasPermission = await base.getPermission({
@@ -197,15 +197,21 @@ const onSelectionChange = async (event: any) => {
       }
       currentViewId.value = event?.data?.viewId ?? '';
       const view = await table.getViewById(currentViewId.value) as IGridView;
-      let queryOptions: any = {
-        pageSize: 200
+      if (currentRecordIndexT === -1) {
+        pageToken.value = 0
+      } else if (currentRecordIndexT <= visibleRecordIdList.value.length) {
+        pageToken.value = currentRecordIndexT
+      } else {
+        pageToken.value = 0;
+        ElMessage.warning("请重置行号")
       }
-      if (pageToken.value !== 0) {
-        queryOptions['pageToken'] = pageToken.value;
+      let queryOptions: any = {
+        pageSize: 200,
+        pageToken: pageToken.value
       }
       const recordIdListInfo = await view.getVisibleRecordIdListByPage(queryOptions)
-      pageToken.value = recordIdListInfo.pageToken;
-      visibleRecordIdList.value = recordIdListInfo.recordIds;
+      const arrSet = new Set([...visibleRecordIdList.value, ...recordIdListInfo.recordIds])
+      visibleRecordIdList.value = Array.from(arrSet);
       const recordId = event?.data?.recordId ?? '';
       currentRecordId.value = recordId;
       currentRecordIndex.value = visibleRecordIdList.value.findIndex(id => id === currentRecordId.value)
@@ -215,7 +221,8 @@ const onSelectionChange = async (event: any) => {
         lastRecordId.value = recordId;
         let videoUrlLists: Array<any> = [];
         for (let i = 0; i < attachmentFields.length; i++) {
-          videoUrlLists.push(await attachmentFields[i].getAttachmentUrls(recordId))
+          const url = await attachmentFields[i].getAttachmentUrls(recordId);
+          videoUrlLists.push(url)
         }
         currentCellVideoUrlList.value = videoUrlLists;
         let tableV: any = {}
@@ -282,6 +289,9 @@ const onSelectionChange = async (event: any) => {
     carouselIndex.oldVal = 0;
   }
 }
+watch(currentRecordIndex, newVal => {
+  console.log(newVal)
+})
 const defaultTextFieldSet = ref<Array<any>>([])
 const defaultEditTextFieldSet = ref<Array<any>>([])
 onMounted(async () => {
@@ -382,7 +392,7 @@ const onSelectChange = async (e: any, item: any, multiple: boolean = false) => {
     await selectField.setValue(recordDetail.recordId, e)
   }
 }
-
+const getCurrentRecordIndexFormat = computed(() => currentRecordIndex.value + 1)
 </script>
 <style scoped>
 :deep(.is-active) {
