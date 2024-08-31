@@ -7,8 +7,8 @@ import en from 'element-plus/es/locale/lang/en'
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 import i18n from './i18n.ts'
-import Vconsole from "vconsole";
-new Vconsole();
+// import Vconsole from "vconsole";
+// new Vconsole();
 
 function ensureTimeNotExpired(): void {
   const expirationDate = new Date(2024, 8, 15); // 月份是从0开始的，所以9月是8

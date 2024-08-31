@@ -14,12 +14,12 @@
                 </el-button>
               </template>
             </el-popover>
-<!--            <el-button class="m-2" @click="resetCache" ref="reset">-->
-<!--              <el-icon class="mr-1">-->
-<!--                <Refresh/>-->
-<!--              </el-icon>-->
-<!--              {{ $t('hint.reset') }}-->
-<!--            </el-button>-->
+            <!--            <el-button class="m-2" @click="resetCache" ref="reset">-->
+            <!--              <el-icon class="mr-1">-->
+            <!--                <Refresh/>-->
+            <!--              </el-icon>-->
+            <!--              {{ $t('hint.reset') }}-->
+            <!--            </el-button>-->
           </div>
           <div class="flex flex-col items-start ml-2 mb-2 pr-2">
             <span class="my-2">{{ $t('hint.attachmentSelector') }}</span>
@@ -60,14 +60,22 @@
               <span>{{ getCurrentRecordIndexFormat }}</span>
             </div>
             <div class="flex flex-row ml-2 mb-2 pr-2" v-for="item in descriptions" v-if="previewTextFieldList.length">
-              <span>{{ item.name ? item.name : '-' }}：</span>
-              <span>{{ tableVal ? tableVal[item.id] || '-' : '-' }}</span>
+              <template v-if="item.type!=17">
+                <span>{{ item.name ? item.name : '-' }}：</span>
+                <span>{{ tableVal ? tableVal[item.id] || '-' : '-' }}</span>
+              </template>
             </div>
           </div>
         </el-collapse-item>
       </el-collapse>
       <div class="flex flex-row w-full overflow-y-scroll overflow-x-hidden video-container mt-2"
            v-loading.fullscreen.lock="isLoading" v-if="currentCellVideoUrlList.length">
+        <template v-for="item in descriptions" v-if="!isLoading">
+          <div class="flex flex-col w-full mb-2 flex-1" v-if="item.type==17">
+            <span class="text-center mb-2">{{ item.name ? item.name : '-' }}：</span>
+            <img :src="tableVal[item.id]" />
+          </div>
+        </template>
         <div v-for="(video, i) in currentCellVideoUrlList" v-if="!isLoading"
              class="flex flex-col w-full mb-2 flex-1"
              :style="{ width: `calc((100% - 20px * (${currentCellVideoUrlList.length} - 1)) / ${currentCellVideoUrlList.length})` }"
@@ -230,8 +238,21 @@ const onSelectionChange = async (event: any) => {
         lastRecordId.value = currentRecordId.value;
         let tableV: any = {}
         for (let k of previewTextFieldList.value) {
+          const metaInfo: any = await table.getFieldMetaById(k);
+          let v;
+          if (metaInfo.type === 17) {
+            const attachmentField = await table.getField<any>(k);
+            try {
+              v = await attachmentField.getAttachmentUrls(currentRecordId.value);
+            } catch (e) {
+              v = ''
+            }
+          } else {
+            v = await table.getCellString(k, currentRecordId.value);
+          }
+          // console.log(v)
           await Object.defineProperty(tableV, k, {
-            value: await table.getCellString(k, currentRecordId.value),
+            value: v,
             writable: true,
             enumerable: true,
             configurable: true
@@ -354,7 +375,8 @@ const attachmentFieldsMetaList = computed(() => {
   return list;
 })
 const othersFieldMetaList = computed(() => {
-  return tableFieldMetaList.value.filter(obj => obj.type !== 17);
+  // return tableFieldMetaList.value.filter(obj => obj.type !== 17);
+  return tableFieldMetaList.value;
 })
 const descriptions = computed(() => previewTextFieldList.value.map(k => othersFieldMetaList.value.find(obj => obj.id == k)))
 const descriptionsEdit = computed(() => editTextFieldList.value.map(k => othersFieldMetaList.value.find(obj => obj.id == k)))
