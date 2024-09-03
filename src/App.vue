@@ -81,7 +81,7 @@
              :style="{ width: `calc((100% - 20px * (${currentCellVideoUrlList.length} - 1)) / ${currentCellVideoUrlList.length})` }"
         >
           <span class="text-center mb-2">{{ currentFieldIdsName[i] }}</span>
-          <video :src="video" autoplay controls class="cursor-pointer"
+          <video :ref="setVideoRef" :src="video" autoplay controls class="cursor-pointer"
                  :style="{height: '50vh', objectFit: 'contain', background: '#000'}"/>
         </div>
       </div>
@@ -119,6 +119,9 @@
                          :value="item.id"/>
             </el-select>
           </div>
+        </div>
+        <div class="flex flex-row justify-center">
+          <el-button type="primary" @click="replayAllVideos">重播</el-button>
         </div>
       </div>
       <div class="flex flex-row justify-center w-full bottom-8 fixed">
@@ -299,12 +302,14 @@ const onSelectionChange = async (event: any) => {
       } else {
         lastRecordId.value = recordId;
         currentCellVideoUrlList.value = []
+        videoRefs.value = [];
         tableVal.value = null;
         isLoading.value = false;
       }
     } catch (e) {
       console.log(e)
       currentCellVideoUrlList.value = []
+      videoRefs.value = [];
       tableVal.value = null;
       isLoading.value = false;
     } finally {
@@ -314,6 +319,7 @@ const onSelectionChange = async (event: any) => {
   } else {
     ElMessage.error('你没有权限访问此附件！')
     currentCellVideoUrlList.value = []
+    videoRefs.value = [];
     tableVal.value = null;
     isLoading.value = false;
     carouselIndex.newVal = 0;
@@ -431,6 +437,22 @@ const onSelectChange = async (e: any, item: any, multiple: boolean = false) => {
   }
 }
 const getCurrentRecordIndexFormat = computed(() => currentRecordIndex.value + 1)
+
+const videoRefs = ref([]); // 用于存储所有的 video 元素引用
+const setVideoRef = (el) => {
+  if (el) {
+    videoRefs.value.push(el);
+  }
+};
+const replayAllVideos = () => {
+  videoRefs.value.forEach(video => {
+    if (!video.paused) {
+      video.pause();
+    }
+    video.currentTime = 0;
+    video.play();
+  });
+};
 </script>
 <style scoped>
 :deep(.is-active) {
