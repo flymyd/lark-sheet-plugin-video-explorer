@@ -145,7 +145,7 @@
 </template>
 <script setup lang="ts">
 import {computed, onMounted, onUnmounted, reactive, ref, watch} from "vue";
-import {bitable, IAttachmentField, IGridView} from "@lark-base-open/js-sdk";
+import {bitable, FieldType, IAttachmentField, IGridView, IMultiSelectFieldMeta, IOpenMultiSelect, IOpenSingleSelect, ISingleSelectFieldMeta} from "@lark-base-open/js-sdk";
 import {base, PermissionEntity, OperationType} from '@lark-base-open/js-sdk';
 import {ElConfigProvider, ElMessage, ElMessageBox} from 'element-plus';
 import {useAppStore} from './store/modules/app'
@@ -428,14 +428,73 @@ const onInputChange = async (e: any, item: any) => {
 }
 const onSelectChange = async (e: any, item: any, multiple: boolean = false) => {
   const table = await bitable.base.getActiveTable();
-  const selectField = await table.getField<any>(item.id);
+  const selectField = await table.getField(item.id);
   const recordDetail = tableValEdit.value[item.id];
-  if (!e && multiple) {
-    await selectField.setValue(recordDetail.recordId, [])
-  } else {
-    await selectField.setValue(recordDetail.recordId, e)
+  const selectFieldMeta: IMultiSelectFieldMeta | ISingleSelectFieldMeta = await selectField.getMeta() as any;
+  /** 所选字段的选项 */
+  const exitOptions = selectFieldMeta.property.options
+
+  const type = selectFieldMeta.type;
+  if (type === FieldType.SingleSelect) {
+    // 处理单选
+    if ((e && typeof e === 'object' && e.id)||typeof e==='string') {
+      const valueInFind = exitOptions.find(({ id }) => id === e.id || e===id);
+      const newValue: IOpenSingleSelect | null = valueInFind ? { id: valueInFind.id, text: valueInFind.name } : null;
+      if (newValue) {
+        // 找到了才设置进去
+        await selectField.setValue(recordDetail.recordId, newValue)
+      } else {
+        alert('单选-Toast警告：选项不存在，不创建选项，跳过');
+        console.log('单选-Toast警告：选项不存在，不创建选项，跳过', e)
+      }
+    } else {
+      alert('单选-Toast警告：将要设置空值')
+    }
+    return;
+  } else if (type === FieldType.MultiSelect) {
+    // 处理多选
+    if (Array.isArray(e) && e.length) {
+      /** e中，在已存在选项中存在的值 */
+      const newValue: IOpenMultiSelect = [];
+      /** 是否要创建新的选项 */
+      const shouldCreate: any[] = []
+      e.forEach((v) => {
+        const exit = exitOptions.find(({ id }) => id === v.id || v===id);
+        if (exit) {
+          newValue.push({
+            id: exit.id,
+            text: exit.name,
+          });
+        } else {
+          shouldCreate.push(v);
+        }
+      });
+      await selectField.setValue(recordDetail.recordId, newValue);
+      if (shouldCreate.length) {
+        alert('多选-Toast警告：存在选项之外的值，不知道要不要创建选项');
+        console.log({
+          exitOptions,
+          shouldCreate,
+          e,
+        })
+      }
+    } else {
+      alert('多选-Toast警告：将设置空值')
+    }
+
+    return;
   }
+
+  alert('toast警告:预期之外，不是单选也不是多选字段，还需要再额外开发')
+
+
+  // if (!e && multiple) {
+  //   await selectField.setValue(recordDetail.recordId, [])
+  // } else {
+  //   await selectField.setValue(recordDetail.recordId, e)
+  // }
 }
+
 const getCurrentRecordIndexFormat = computed(() => currentRecordIndex.value + 1)
 
 const videoRefs = ref([]); // 用于存储所有的 video 元素引用
