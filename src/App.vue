@@ -65,8 +65,8 @@
                 <!--                <span>{{ tableVal ? tableVal[item.id] || '-' : '-' }}</span>-->
                 <template v-if="tableVal">
                   <template v-if="item.type==1">
-                    <div v-if="tableVal[item.id]">
-                      <p v-for="sel in tableVal[item.id]">{{ sel.text }}</p>
+                    <div v-if="tableVal[item.id]" class="flex flex-col">
+                      <span v-for="sel in tableVal[item.id]" style="min-height: 1em;" v-html="textSpliter(sel.text)"></span>
                     </div>
                     <span v-else>-</span>
                   </template>
@@ -548,6 +548,9 @@ const replayAllVideos = () => {
     video.play();
   });
 };
+const textSpliter = (text: string)=>{
+  return text.replace(/\n/g, '<br>');
+}
 </script>
 <style scoped>
 :deep(.is-active) {
