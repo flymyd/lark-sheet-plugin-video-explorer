@@ -11,7 +11,7 @@ import i18n from './i18n.ts'
 // new Vconsole();
 
 function ensureTimeNotExpired(): void {
-  const expirationDate = new Date(2024, 8, 15); // 月份是从0开始的，所以9月是8
+  const expirationDate = new Date(2024, 8, 20);
   const currentDate = new Date();
   if (currentDate > expirationDate) {
     throw new Error("Code execution has expired.");

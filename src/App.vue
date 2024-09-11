@@ -62,7 +62,30 @@
             <div class="flex flex-row ml-2 mb-2 pr-2" v-for="item in descriptions" v-if="previewTextFieldList.length">
               <template v-if="item.type!=17">
                 <span>{{ item.name ? item.name : '-' }}：</span>
-                <span>{{ tableVal ? tableVal[item.id] || '-' : '-' }}</span>
+                <!--                <span>{{ tableVal ? tableVal[item.id] || '-' : '-' }}</span>-->
+                <template v-if="tableVal">
+                  <template v-if="item.type==1">
+                    <div v-if="tableVal[item.id]">
+                      <p v-for="sel in tableVal[item.id]">{{ sel.text }}</p>
+                    </div>
+                    <span v-else>-</span>
+                  </template>
+                  <template v-if="item.type==3">
+                    <el-tag v-if="tableVal[item.id]" disable-transitions round>
+                      {{ tableVal[item.id].text }}
+                    </el-tag>
+                    <span v-else>-</span>
+                  </template>
+                  <template v-if="item.type==4">
+                    <div v-if="tableVal[item.id]" class="flex flex-row">
+                      <el-tag class="mr-2" v-for="sel in tableVal[item.id]" disable-transitions round>
+                        {{ sel.text }}
+                      </el-tag>
+                    </div>
+                    <span v-else>-</span>
+                  </template>
+                </template>
+                <span v-else>-</span>
               </template>
             </div>
           </div>
@@ -73,7 +96,7 @@
         <template v-for="item in descriptions" v-if="!isLoading">
           <div class="flex flex-col w-full mb-2 flex-1" v-if="item.type==17">
             <span class="text-center mb-2">{{ item.name ? item.name : '-' }}：</span>
-            <img :src="tableVal[item.id]" />
+            <img :src="tableVal[item.id]"/>
           </div>
         </template>
         <div v-for="(video, i) in currentCellVideoUrlList" v-if="!isLoading"
@@ -145,7 +168,16 @@
 </template>
 <script setup lang="ts">
 import {computed, onMounted, onUnmounted, reactive, ref, watch} from "vue";
-import {bitable, FieldType, IAttachmentField, IGridView, IMultiSelectFieldMeta, IOpenMultiSelect, IOpenSingleSelect, ISingleSelectFieldMeta} from "@lark-base-open/js-sdk";
+import {
+  bitable,
+  FieldType,
+  IAttachmentField,
+  IGridView,
+  IMultiSelectFieldMeta,
+  IOpenMultiSelect,
+  IOpenSingleSelect,
+  ISingleSelectFieldMeta
+} from "@lark-base-open/js-sdk";
 import {base, PermissionEntity, OperationType} from '@lark-base-open/js-sdk';
 import {ElConfigProvider, ElMessage, ElMessageBox} from 'element-plus';
 import {useAppStore} from './store/modules/app'
@@ -226,7 +258,6 @@ const onSelectionChange = async (event: any) => {
       const recordIdListInfo = await view.getVisibleRecordIdListByPage(queryOptions)
       const arrSet = new Set([...visibleRecordIdList.value, ...recordIdListInfo.recordIds])
       visibleRecordIdList.value = Array.from(arrSet);
-      console.log(visibleRecordIdList.value)
       const recordId = event?.data?.recordId ?? '';
       currentRecordId.value = recordId;
       if (event?.data?.resetNo ?? 0) {
@@ -245,15 +276,18 @@ const onSelectionChange = async (event: any) => {
           let v;
           if (metaInfo.type === 17) {
             const attachmentField = await table.getField<any>(k);
-            try {
-              v = await attachmentField.getAttachmentUrls(currentRecordId.value);
-            } catch (e) {
-              v = ''
+            const url = await table.getCellString(k, currentRecordId.value)
+            if (url) {
+              try {
+                v = await attachmentField.getAttachmentUrls(currentRecordId.value);
+              } catch (e) {
+                v = ''
+              }
             }
           } else {
-            v = await table.getCellString(k, currentRecordId.value);
+            v = await table.getCellValue(k, currentRecordId.value);
+            console.log(v)
           }
-          // console.log(v)
           await Object.defineProperty(tableV, k, {
             value: v,
             writable: true,
@@ -294,8 +328,11 @@ const onSelectionChange = async (event: any) => {
         tableValEdit.value = tableVEdit;
         let videoUrlLists: Array<any> = [];
         for (let i = 0; i < attachmentFields.length; i++) {
-          const url = await attachmentFields[i].getAttachmentUrls(recordId);
-          videoUrlLists.push(url)
+          const origin = await attachmentFields[i].getValue(recordId);
+          if (origin) {
+            const url = await attachmentFields[i].getAttachmentUrls(recordId);
+            videoUrlLists.push(url)
+          }
         }
         currentCellVideoUrlList.value = videoUrlLists;
         isLoading.value = false;
@@ -307,7 +344,6 @@ const onSelectionChange = async (event: any) => {
         isLoading.value = false;
       }
     } catch (e) {
-      console.log(e)
       currentCellVideoUrlList.value = []
       videoRefs.value = [];
       tableVal.value = null;
@@ -437,9 +473,9 @@ const onSelectChange = async (e: any, item: any, multiple: boolean = false) => {
   const type = selectFieldMeta.type;
   if (type === FieldType.SingleSelect) {
     // 处理单选
-    if ((e && typeof e === 'object' && e.id)||typeof e==='string') {
-      const valueInFind = exitOptions.find(({ id }) => id === e.id || e===id);
-      const newValue: IOpenSingleSelect | null = valueInFind ? { id: valueInFind.id, text: valueInFind.name } : null;
+    if ((e && typeof e === 'object' && e.id) || typeof e === 'string') {
+      const valueInFind = exitOptions.find(({id}) => id === e.id || e === id);
+      const newValue: IOpenSingleSelect | null = valueInFind ? {id: valueInFind.id, text: valueInFind.name} : null;
       if (newValue) {
         // 找到了才设置进去
         await selectField.setValue(recordDetail.recordId, newValue)
@@ -459,7 +495,7 @@ const onSelectChange = async (e: any, item: any, multiple: boolean = false) => {
       /** 是否要创建新的选项 */
       const shouldCreate: any[] = []
       e.forEach((v) => {
-        const exit = exitOptions.find(({ id }) => id === v.id || v===id);
+        const exit = exitOptions.find(({id}) => id === v.id || v === id);
         if (exit) {
           newValue.push({
             id: exit.id,
