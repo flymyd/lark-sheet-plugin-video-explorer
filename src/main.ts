@@ -10,16 +10,7 @@ import i18n from './i18n.ts'
 // import Vconsole from "vconsole";
 // new Vconsole();
 
-function ensureTimeNotExpired(): void {
-  const expirationDate = new Date(2024, 8, 20);
-  const currentDate = new Date();
-  if (currentDate > expirationDate) {
-    throw new Error("Code execution has expired.");
-  }
-}
-
 try {
-  ensureTimeNotExpired();
   const pinia = createPinia()
   createApp(App).use(pinia).use(ElementPlus, {locale: en}).use(i18n).mount('#app')
 } catch (error) {
