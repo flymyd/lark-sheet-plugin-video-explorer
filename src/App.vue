@@ -66,7 +66,8 @@
                 <template v-if="tableVal">
                   <template v-if="item.type==1">
                     <div v-if="tableVal[item.id]" class="flex flex-col">
-                      <span v-for="sel in tableVal[item.id]" style="min-height: 1em;" v-html="textSpliter(sel.text)"></span>
+                      <span v-for="sel in tableVal[item.id]" style="min-height: 1em;"
+                            v-html="textSpliter(sel.text)"></span>
                     </div>
                     <span v-else>-</span>
                   </template>
@@ -104,7 +105,7 @@
              :style="{ width: `calc((100% - 20px * (${currentCellVideoUrlList.length} - 1)) / ${currentCellVideoUrlList.length})` }"
         >
           <span class="text-center mb-2">{{ currentFieldIdsName[i] }}</span>
-          <video :ref="setVideoRef" :src="video" autoplay controls class="cursor-pointer"
+          <video :ref="setVideoRef" :src="video" autoplay controls class="cursor-pointer" v-if="video"
                  :style="{height: '50vh', objectFit: 'contain', background: '#000'}"/>
         </div>
       </div>
@@ -332,6 +333,8 @@ const onSelectionChange = async (event: any) => {
           if (origin) {
             const url = await attachmentFields[i].getAttachmentUrls(recordId);
             videoUrlLists.push(url)
+          } else {
+            videoUrlLists.push('')
           }
         }
         currentCellVideoUrlList.value = videoUrlLists;
@@ -548,7 +551,7 @@ const replayAllVideos = () => {
     video.play();
   });
 };
-const textSpliter = (text: string)=>{
+const textSpliter = (text: string) => {
   return text.replace(/\n/g, '<br>');
 }
 </script>
