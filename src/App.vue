@@ -168,7 +168,7 @@
   </el-config-provider>
 </template>
 <script setup lang="ts">
-import {computed, onMounted, onUnmounted, reactive, ref, watch} from "vue";
+import {computed, onMounted, onUnmounted, reactive, ref} from "vue";
 import {
   bitable,
   FieldType,
@@ -182,8 +182,9 @@ import {
 import {base, PermissionEntity, OperationType} from '@lark-base-open/js-sdk';
 import {ElConfigProvider, ElMessage, ElMessageBox} from 'element-plus';
 import {useAppStore} from './store/modules/app'
-import {QuestionFilled, Refresh, ArrowLeftBold, ArrowRightBold, WarningFilled} from '@element-plus/icons-vue'
+import {QuestionFilled, ArrowLeftBold, ArrowRightBold, WarningFilled} from '@element-plus/icons-vue'
 import {useTheme} from './hooks/useTheme';
+import pinyin from 'pinyin';
 
 const prevAndNext = ref<any>(null);
 const attachmentSelector = ref<any>(null);
@@ -412,13 +413,57 @@ const resetCache = async () => {
     onSelectionChange({data: {viewId, refresh: true, resetNo: Number(value)}})
   })
 }
+// const attachmentFieldsMetaList = computed(() => {
+//   const list = tableFieldMetaList.value.filter(obj => obj.type === 17);
+//   if (list.length) {
+//     currentFieldIds.value = [list[0].id];
+//   }
+//   return list;
+// })
 const attachmentFieldsMetaList = computed(() => {
   const list = tableFieldMetaList.value.filter(obj => obj.type === 17);
+
+  // 定义排序函数
+  function compare(a, b) {
+    // 获取 name 属性值
+    const nameA = a.name;
+    const nameB = b.name;
+
+    // 检查是否为数字
+    if (!isNaN(nameA) && !isNaN(nameB)) {
+      return nameA - nameB; // 数字直接比较大小
+    }
+
+    // 如果一个是数字另一个不是，数字排在前面
+    if (!isNaN(nameA)) return -1;
+    if (!isNaN(nameB)) return 1;
+
+    // 检查是否为英文
+    if (/^[a-zA-Z]/.test(nameA) && /^[a-zA-Z]/.test(nameB)) {
+      return nameA.localeCompare(nameB); // 英文使用 localeCompare 比较
+    }
+
+    // 如果一个是英文另一个不是，英文排在前面
+    if (/^[a-zA-Z]/.test(nameA)) return -1;
+    if (/^[a-zA-Z]/.test(nameB)) return 1;
+
+    // 处理汉字
+    const pinyinA = pinyin(nameA.charAt(0), { style: pinyin.STYLE_FIRST_LETTER }).join('').toUpperCase();
+    const pinyinB = pinyin(nameB.charAt(0), { style: pinyin.STYLE_FIRST_LETTER }).join('').toUpperCase();
+    //
+    return pinyinA.localeCompare(pinyinB); // 按拼音首字母排序
+  }
+
+  // 使用 sort 函数排序列表
+  list.sort(compare);
+
+  // 更新当前字段 ID
   if (list.length) {
     currentFieldIds.value = [list[0].id];
   }
+
   return list;
-})
+});
 const othersFieldMetaList = computed(() => {
   // return tableFieldMetaList.value.filter(obj => obj.type !== 17);
   return tableFieldMetaList.value;

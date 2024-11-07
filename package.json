@@ -18,9 +18,11 @@
     "vconsole": "^3.15.1",
     "vue": "^3.4.21",
     "vue-i18n": "^9.13.1",
-    "xgplayer": "^3.0.20"
+    "xgplayer": "^3.0.20",
+    "pinyin": "^2.11.2"
   },
   "devDependencies": {
+    "@types/pinyin": "^2.10.2",
     "@vitejs/plugin-vue": "^5.0.4",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
