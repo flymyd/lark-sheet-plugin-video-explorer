@@ -35,7 +35,6 @@
                        collapse-tags
                        collapse-tags-tooltip
                        :max-collapse-tags="3"
-                       :multiple-limit="4"
                        class="flex-1" ref="textSelector">
               <el-option v-for="item in othersFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
             </el-select>
@@ -47,7 +46,6 @@
                        collapse-tags
                        collapse-tags-tooltip
                        :max-collapse-tags="3"
-                       :multiple-limit="4"
                        class="flex-1" ref="editSelector">
               <el-option v-for="item in othersFieldMetaList" :key="item.id" :label="item.name" :value="item.id"/>
             </el-select>
